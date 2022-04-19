@@ -12,9 +12,9 @@
 
     export PDS_USER_CREDENTIAL=<Path in vault location to PDS Users credentials>
 
-
-export VAULT_HOST=<Vault URL>
-export VAULT_TOKEN=<Vault token>
+    export VAULT_HOST=<Vault URL>
+    
+    export VAULT_TOKEN=<Vault token>
 
 # Test execution
     go test ./test  -timeout 99999999s -v
