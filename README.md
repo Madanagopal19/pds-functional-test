@@ -1,4 +1,4 @@
-# ###  PDS Functional test (Updating soon)
+# PDS Functional test (Updating soon)
 
 # Setting up the environment to run the tests 
 
