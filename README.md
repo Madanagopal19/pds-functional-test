@@ -23,7 +23,7 @@
     Register the target cluster to control plane.
 
 # Result
-  Logs will be populated inside the log directory filename-<timestamp> as well as on the terminal.
+    Logs will be populated inside the log directory filename - <timestamp> as well as on the terminal.
   
   
   
