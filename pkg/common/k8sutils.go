@@ -2,6 +2,7 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -11,7 +12,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func GetPods(namespace string, pathToKubeconfig string) []v1.Pod {
+func ListPods(namespace string, pathToKubeconfig string) []v1.Pod {
 	config, err := clientcmd.BuildConfigFromFlags("", pathToKubeconfig)
 	if err != nil {
 		log.Panic(err)
@@ -28,7 +29,7 @@ func GetPods(namespace string, pathToKubeconfig string) []v1.Pod {
 	return podList.Items
 }
 
-func VerifyPodsStatus(namespace string, pathToKubeconfig string) {
+func CheckPodsHealth(namespace string, pathToKubeconfig string) {
 	config, err := clientcmd.BuildConfigFromFlags("", pathToKubeconfig)
 	if err != nil {
 		log.Panic(err)
@@ -37,9 +38,8 @@ func VerifyPodsStatus(namespace string, pathToKubeconfig string) {
 	if err != nil {
 		log.Panic(err)
 	}
-	watchPodsStatus(namespace, pathToKubeconfig)
-	pods := GetPods(namespace, pathToKubeconfig)
-	log.Infof("There are %d pods in the cluster in the namespace %s", len(pods), namespace)
+	pods := ListPods(namespace, pathToKubeconfig)
+	log.Infof("There are %d pods present in the namespace %s", len(pods), namespace)
 	for _, pod := range pods {
 		_, err = clientset.CoreV1().Pods(namespace).Get(context.TODO(), pod.GetName(), metav1.GetOptions{})
 		if errors.IsNotFound(err) {
@@ -54,11 +54,11 @@ func VerifyPodsStatus(namespace string, pathToKubeconfig string) {
 		} else {
 			log.Infof("Found pod %s (Namespace -  %s) in healthy state.", pod.GetName(), namespace)
 		}
-		time.Sleep(10 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 }
 
-func GetNamespaces(pathToKubeconfig string) []v1.Namespace {
+func GetNamespaces(pathToKubeconfig string) ([]v1.Namespace, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", pathToKubeconfig)
 	if err != nil {
 		log.Panic(err)
@@ -70,14 +70,42 @@ func GetNamespaces(pathToKubeconfig string) []v1.Namespace {
 
 	namespaces, err := clientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
+		log.Info(err)
+	}
+	return namespaces.Items, err
+}
+func GetNamespace(name string, pathToKubeconfig string) (*v1.Namespace, error) {
+	config, err := clientcmd.BuildConfigFromFlags("", pathToKubeconfig)
+	if err != nil {
 		log.Panic(err)
 	}
-	return namespaces.Items
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	namespace, err := clientset.CoreV1().Namespaces().Get(context.Background(), name, metav1.GetOptions{})
+	if err != nil {
+		log.Info(err)
+	}
+	return namespace, err
 }
 
-func watchPodsStatus(namespace string, pathToKubeconfig string) {
-	// kubeconfig = flag.String("kubeconfig", "", pathToKubeconfig)
-	// flag.Parse()
+func IsNamespaceExist(name string, pathToKubeconfig string) bool {
+	config, err := clientcmd.BuildConfigFromFlags("", pathToKubeconfig)
+	if err != nil {
+		log.Panic(err)
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	_, err = clientset.CoreV1().Namespaces().Get(context.Background(), name, metav1.GetOptions{})
+	return !(errors.IsAlreadyExists(err) || errors.IsNotFound(err))
+}
+
+func WatchPodsStatus(namespace string, pathToKubeconfig string) {
 	config, err := clientcmd.BuildConfigFromFlags("", pathToKubeconfig)
 	if err != nil {
 		log.Fatal(err)
@@ -103,4 +131,15 @@ func watchPodsStatus(namespace string, pathToKubeconfig string) {
 		}
 	}()
 	time.Sleep(10 * time.Second)
+}
+
+func GetClusterId(pathToKubeconfig string) (string, error) {
+	log.Infof("Fetch Cluster id ")
+	cmd := fmt.Sprintf("kubectl get ns kube-system -o jsonpath={.metadata.uid} --kubeconfig %s", pathToKubeconfig)
+	output, _, err := ExecShell(cmd)
+	if err != nil {
+		log.Error(err)
+		return "Connection Refused!!", err
+	}
+	return output, nil
 }

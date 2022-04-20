@@ -6,7 +6,6 @@ import (
 	status "net/http"
 
 	pds "github.com/portworx/pds-api-go-client/pds/v1alpha1"
-	log "github.com/sirupsen/logrus"
 )
 
 type DataServiceDeployment struct {
@@ -20,20 +19,19 @@ func (ds *DataServiceDeployment) ListDeployments(projectId string) ([]pds.Models
 	dsModels, res, err := dsClient.ApiProjectsIdDeploymentsGet(ds.context, projectId).Execute()
 
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiProjectsIdDeploymentsGet``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return dsModels.GetData(), err
 }
 
-func (ds *DataServiceDeployment) CreateDeployment(projectId string, deploymentTargetId string, name string, namespaceId string, appConfigId string, imageId string, nodeCount int32, serviceType string, resourceTemplateId string, storageTemplateId string) (*pds.ModelsDeployment, error) {
+func (ds *DataServiceDeployment) CreateDeployment(projectId string, deploymentTargetId string, dnsZone string, name string, namespaceId string, appConfigId string, imageId string, nodeCount int32, serviceType string, resourceTemplateId string, storageTemplateId string) (*pds.ModelsDeployment, error) {
 	dsClient := ds.apiClient.DeploymentsApi
-	dns_zone := "portworx.pds-dns-dev.io"
 	createRequest := pds.ControllersCreateProjectDeployment{
 		// ApplicationConfigurationOverrides:  &appConfigOverride,
 		ApplicationConfigurationTemplateId: &appConfigId,
 		DeploymentTargetId:                 &deploymentTargetId,
-		DnsZone:                            &dns_zone,
+		DnsZone:                            &dnsZone,
 		ImageId:                            &imageId,
 		// LoadBalancerSourceRanges: lbSourceRange,
 		Name:        &name,
@@ -48,13 +46,12 @@ func (ds *DataServiceDeployment) CreateDeployment(projectId string, deploymentTa
 
 	if res.StatusCode != status.StatusOK {
 		log.Errorf("Error when calling `ApiProjectsIdDeploymentsPost``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return dsModel, err
 }
-func (ds *DataServiceDeployment) CreateDeploymentWithScehduleBackup(projectId string, deploymentTargetId string, name string, namespaceId string, appConfigId string, imageId string, nodeCount int32, serviceType string, resourceTemplateId string, storageTemplateId string, backupPolicyId string, backupTargetId string) (*pds.ModelsDeployment, error) {
+func (ds *DataServiceDeployment) CreateDeploymentWithScehduleBackup(projectId string, deploymentTargetId string, dnsZone string, name string, namespaceId string, appConfigId string, imageId string, nodeCount int32, serviceType string, resourceTemplateId string, storageTemplateId string, backupPolicyId string, backupTargetId string) (*pds.ModelsDeployment, error) {
 	dsClient := ds.apiClient.DeploymentsApi
-	dns_zone := "portworx.pds-dns-dev.io"
 	scheduledBackup := pds.ControllersCreateDeploymentScheduledBackup{
 		BackupPolicyId: &backupPolicyId,
 		BackupTargetId: &backupTargetId,
@@ -62,7 +59,7 @@ func (ds *DataServiceDeployment) CreateDeploymentWithScehduleBackup(projectId st
 	createRequest := pds.ControllersCreateProjectDeployment{
 		ApplicationConfigurationTemplateId: &appConfigId,
 		DeploymentTargetId:                 &deploymentTargetId,
-		DnsZone:                            &dns_zone,
+		DnsZone:                            &dnsZone,
 		ImageId:                            &imageId,
 		Name:                               &name,
 		NamespaceId:                        &namespaceId,
@@ -76,7 +73,7 @@ func (ds *DataServiceDeployment) CreateDeploymentWithScehduleBackup(projectId st
 
 	if res.StatusCode != status.StatusOK {
 		log.Errorf("Error when calling `ApiProjectsIdDeploymentsPost``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return dsModel, err
 }
@@ -85,8 +82,8 @@ func (ds *DataServiceDeployment) GetDeployment(deploymentId string) (*pds.Models
 	dsClient := ds.apiClient.DeploymentsApi
 	dsModel, res, err := dsClient.ApiDeploymentsIdGet(ds.context, deploymentId).Execute()
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiDeploymentsIdGet``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return dsModel, err
 }
@@ -96,8 +93,8 @@ func (ds *DataServiceDeployment) GetDeploymentSatus(deploymentId string) (*pds.D
 	dsModel, res, err := dsClient.ApiDeploymentsIdStatusGet(ds.context, deploymentId).Execute()
 
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiDeploymentsIdStatusGet``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return dsModel, err
 }
@@ -107,8 +104,8 @@ func (ds *DataServiceDeployment) GetConnectionDetails(deploymentId string) (pds.
 	dsModel, res, err := dsClient.ApiDeploymentsIdConnectionInfoGet(ds.context, deploymentId).Execute()
 
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiDeploymentsIdConnectionInfoGet``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return dsModel.GetConnectionDetails(), err
 }
@@ -117,8 +114,8 @@ func (ds *DataServiceDeployment) DeleteDeployment(deploymentId string) (*status.
 	dsClient := ds.apiClient.DeploymentsApi
 	res, err := dsClient.ApiDeploymentsIdDelete(ds.context, deploymentId).Execute()
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiDeploymentsIdDelete``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return res, err
 }

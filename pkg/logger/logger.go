@@ -32,7 +32,7 @@ func (f *customFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 }
 
 func init() {
-	filename := fmt.Sprintf("logs/log-%v.txt", time.Now().Format("20060102150405"))
+	filename := fmt.Sprintf("logs/log-%v.log", time.Now().Format("20060102150405"))
 	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 
 	if err != nil {

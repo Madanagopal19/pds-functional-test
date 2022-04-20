@@ -18,6 +18,9 @@ const (
 	envVaultToken        = "VAULT_TOKEN"
 	envPDSUserCredential = "PDS_USER_CREDENTIAL"
 	envPDSSecretKey      = "PDS_SECRET_KEY"
+	chartPath            = "/pds-charts"
+	releaseName          = "myrelease"
+	pdsSystemNamespace   = "pds-system"
 )
 
 // Environment lhasha

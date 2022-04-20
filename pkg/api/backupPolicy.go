@@ -5,7 +5,6 @@ import (
 	status "net/http"
 
 	pds "github.com/portworx/pds-api-go-client/pds/v1alpha1"
-	log "github.com/sirupsen/logrus"
 )
 
 type BackupPolicy struct {
@@ -18,7 +17,7 @@ func (backupPolicy *BackupPolicy) ListBackupPolicy(tenantId string) ([]pds.Model
 	backupModels, res, err := backupClient.ApiTenantsIdBackupPoliciesGet(backupPolicy.context, tenantId).Execute()
 
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
+		log.Errorf("Error when calling `ApiTenantsIdBackupPoliciesGet``: %v\n", err)
 		log.Error("Full HTTP response: %v\n", res)
 	}
 	return backupModels.GetData(), err
@@ -29,7 +28,7 @@ func (backupPolicy *BackupPolicy) GetBackupPolicy(backupCredId string) (*pds.Mod
 	backupPolicyModel, res, err := backupClient.ApiBackupPoliciesIdGet(backupPolicy.context, backupCredId).Execute()
 
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
+		log.Errorf("Error when calling `ApiBackupPoliciesIdGet``: %v\n", err)
 		log.Error("Full HTTP response: %v\n", res)
 	}
 	return backupPolicyModel, err
@@ -48,7 +47,7 @@ func (backupPolicy *BackupPolicy) CreateBackupPolicy(tenantId string, name strin
 	}
 	backupPolicyModel, res, err := backupClient.ApiTenantsIdBackupPoliciesPost(backupPolicy.context, tenantId).Body(createRequest).Execute()
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiProjectsIdDeploymentsPost``: %v\n", err)
+		log.Errorf("Error when calling `ApiTenantsIdBackupPoliciesPost``: %v\n", err)
 		log.Error("Full HTTP response: %v\n", res)
 	}
 	return backupPolicyModel, err
@@ -67,7 +66,7 @@ func (backupPolicy *BackupPolicy) UpdateBackupPolicy(backupCredsId string, name 
 	}
 	backupPolicyModel, res, err := backupClient.ApiBackupPoliciesIdPut(backupPolicy.context, backupCredsId).Body(updateRequest).Execute()
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiProjectsIdDeploymentsPost``: %v\n", err)
+		log.Errorf("Error when calling `ApiBackupPoliciesIdPut``: %v\n", err)
 		log.Error("Full HTTP response: %v\n", res)
 	}
 	return backupPolicyModel, err
@@ -78,7 +77,7 @@ func (backupPolicy *BackupPolicy) DeleteBackupPolicy(backupCredsId string) (*sta
 	backupClient := backupPolicy.apiClient.BackupPoliciesApi
 	res, err := backupClient.ApiBackupPoliciesIdDelete(backupPolicy.context, backupCredsId).Execute()
 	if err != nil && res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
+		log.Errorf("Error when calling `ApiBackupPoliciesIdDelete``: %v\n", err)
 		log.Error("Full HTTP response: %v\n", res)
 		return nil, err
 	}

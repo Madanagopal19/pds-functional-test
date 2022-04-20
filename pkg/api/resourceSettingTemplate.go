@@ -6,7 +6,6 @@ import (
 	status "net/http"
 
 	pds "github.com/portworx/pds-api-go-client/pds/v1alpha1"
-	log "github.com/sirupsen/logrus"
 )
 
 type ResourceSettingsTemplate struct {
@@ -19,8 +18,8 @@ func (rt *ResourceSettingsTemplate) ListTemplates(tenantId string) ([]pds.Models
 	rtModel, res, err := rtClient.ApiTenantsIdResourceSettingsTemplatesGet(rt.context, tenantId).Execute()
 
 	if err != nil && res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiTenantsIdResourceSettingsTemplatesGet``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 		return nil, err
 	}
 	return rtModel.GetData(), nil
@@ -31,8 +30,8 @@ func (rt *ResourceSettingsTemplate) GetTemplate(templateId string) (*pds.ModelsR
 	rtModel, res, err := rtClient.ApiResourceSettingsTemplatesIdGet(rt.context, templateId).Execute()
 
 	if err != nil && res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiResourceSettingsTemplatesIdGet``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 		return nil, err
 	}
 	return rtModel, nil
@@ -44,8 +43,8 @@ func (rt *ResourceSettingsTemplate) CreateTemplate(tenantId string, cpuLimit str
 	rtModel, res, err := rtClient.ApiTenantsIdResourceSettingsTemplatesPost(rt.context, tenantId).Body(createRequest).Execute()
 
 	if err != nil && res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiTenantsIdResourceSettingsTemplatesPost``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 		return nil, err
 	}
 	return rtModel, nil
@@ -57,8 +56,8 @@ func (rt *ResourceSettingsTemplate) UpdateTemplate(templateId string, cpuLimit s
 	rtModel, res, err := rtClient.ApiResourceSettingsTemplatesIdPut(rt.context, templateId).Body(updateRequest).Execute()
 
 	if err != nil && res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiResourceSettingsTemplatesIdPut``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 		return nil, err
 	}
 	return rtModel, nil
@@ -69,8 +68,8 @@ func (rt *ResourceSettingsTemplate) DeleteTemplate(templateId string) (*status.R
 	res, err := rtClient.ApiResourceSettingsTemplatesIdDelete(rt.context, templateId).Execute()
 
 	if err != nil && res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiResourceSettingsTemplatesIdDelete``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 		return nil, err
 	}
 	return res, nil

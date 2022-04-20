@@ -5,7 +5,6 @@ import (
 	status "net/http"
 
 	pds "github.com/portworx/pds-api-go-client/pds/v1alpha1"
-	log "github.com/sirupsen/logrus"
 )
 
 type BackupCredential struct {
@@ -18,8 +17,8 @@ func (backupCredential *BackupCredential) ListBackupCredentials(tenantId string)
 	backupModels, res, err := backupClient.ApiTenantsIdBackupCredentialsGet(backupCredential.context, tenantId).Execute()
 
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiTenantsIdBackupCredentialsGet``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return backupModels.GetData(), err
 }
@@ -29,8 +28,8 @@ func (backupCredential *BackupCredential) GetBackupCredential(backupCredId strin
 	backupModel, res, err := backupClient.ApiBackupCredentialsIdGet(backupCredential.context, backupCredId).Execute()
 
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiBackupCredentialsIdGet``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return backupModel, err
 }
@@ -50,8 +49,8 @@ func (backupCredential *BackupCredential) CreateAzureBackupCredential(tenantId s
 	}
 	backupModel, res, err := backupClient.ApiTenantsIdBackupCredentialsPost(backupCredential.context, tenantId).Body(createRequest).Execute()
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiProjectsIdDeploymentsPost``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiTenantsIdBackupCredentialsPost``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return backupModel, err
 
@@ -72,8 +71,8 @@ func (backupCredential *BackupCredential) CreateS3BackupCredential(tenantId stri
 	}
 	backupModel, res, err := backupClient.ApiTenantsIdBackupCredentialsPost(backupCredential.context, tenantId).Body(createRequest).Execute()
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiProjectsIdDeploymentsPost``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiTenantsIdBackupCredentialsPost``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return backupModel, err
 
@@ -94,8 +93,8 @@ func (backupCredential *BackupCredential) CreateS3CompatibleBackupCredential(ten
 	}
 	backupModel, res, err := backupClient.ApiTenantsIdBackupCredentialsPost(backupCredential.context, tenantId).Body(createRequest).Execute()
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiProjectsIdDeploymentsPost``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiTenantsIdBackupCredentialsPost``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return backupModel, err
 
@@ -115,8 +114,8 @@ func (backupCredential *BackupCredential) UpdateAzureBackupCredential(backupCred
 	}
 	backupModel, res, err := backupClient.ApiBackupCredentialsIdPut(backupCredential.context, backupCredsId).Body(updateRequest).Execute()
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiProjectsIdDeploymentsPost``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiBackupCredentialsIdPut``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return backupModel, err
 
@@ -137,8 +136,8 @@ func (backupCredential *BackupCredential) UpdateS3BackupCredential(backupCredsId
 	}
 	backupModel, res, err := backupClient.ApiBackupCredentialsIdPut(backupCredential.context, backupCredsId).Body(updateRequest).Execute()
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiProjectsIdDeploymentsPost``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiBackupCredentialsIdPut``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return backupModel, err
 
@@ -159,8 +158,8 @@ func (backupCredential *BackupCredential) UpdateS3CompatibleBackupCredential(bac
 	}
 	backupModel, res, err := backupClient.ApiBackupCredentialsIdPut(backupCredential.context, backupCredsId).Body(updateRequest).Execute()
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiProjectsIdDeploymentsPost``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiBackupCredentialsIdPut``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return backupModel, err
 
@@ -170,8 +169,8 @@ func (backupCredential *BackupCredential) DeleteBackupCredential(backupCredsId s
 	backupClient := backupCredential.apiClient.BackupCredentialsApi
 	res, err := backupClient.ApiBackupCredentialsIdDelete(backupCredential.context, backupCredsId).Execute()
 	if err != nil && res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiBackupCredentialsIdDelete``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 		return nil, err
 	}
 	return res, nil
@@ -181,8 +180,8 @@ func (backupCredential *BackupCredential) GetCloudCredentials(backupCredsId stri
 	backupClient := backupCredential.apiClient.BackupCredentialsApi
 	cloudCredsModel, res, err := backupClient.ApiBackupCredentialsIdCredentialsGet(backupCredential.context, backupCredsId).Execute()
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiBackupCredentialsIdCredentialsGet``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return cloudCredsModel, err
 }

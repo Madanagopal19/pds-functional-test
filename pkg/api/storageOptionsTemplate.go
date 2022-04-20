@@ -5,7 +5,6 @@ import (
 	status "net/http"
 
 	pds "github.com/portworx/pds-api-go-client/pds/v1alpha1"
-	log "github.com/sirupsen/logrus"
 )
 
 type StorageSettingsTemplate struct {
@@ -19,8 +18,8 @@ func (st *StorageSettingsTemplate) ListTemplates(tenantId string) ([]pds.ModelsS
 	pdsStorageTemplates, res, err := stClient.ApiTenantsIdStorageOptionsTemplatesGet(st.context, tenantId).Execute()
 
 	if err != nil && res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiTenantsIdStorageOptionsTemplatesGet``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 		return nil, err
 	}
 	return pdsStorageTemplates.GetData(), nil
@@ -32,8 +31,8 @@ func (st *StorageSettingsTemplate) GetTemplate(templateId string) (*pds.ModelsSt
 	stModel, res, err := stClient.ApiStorageOptionsTemplatesIdGet(st.context, templateId).Execute()
 
 	if err != nil && res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiStorageOptionsTemplatesIdGet``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 		return nil, err
 	}
 	return stModel, nil
@@ -46,8 +45,8 @@ func (st *StorageSettingsTemplate) CreateTemplate(tenantId string, fg bool, fs s
 	stModel, res, err := stClient.ApiTenantsIdStorageOptionsTemplatesPost(st.context, tenantId).Body(createRequest).Execute()
 
 	if err != nil && res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiTenantsIdStorageOptionsTemplatesPost``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 		return nil, err
 	}
 	return stModel, nil
@@ -60,8 +59,8 @@ func (st *StorageSettingsTemplate) UpdateTemplate(templateId string, fg bool, fs
 	stModel, res, err := stClient.ApiStorageOptionsTemplatesIdPut(st.context, templateId).Body(updateRequest).Execute()
 
 	if err != nil && res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiStorageOptionsTemplatesIdPut``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 		return nil, err
 	}
 	return stModel, nil
@@ -73,8 +72,8 @@ func (st *StorageSettingsTemplate) DeleteTemplate(templateId string) (*status.Re
 	res, err := stClient.ApiStorageOptionsTemplatesIdDelete(st.context, templateId).Execute()
 
 	if err != nil && res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiStorageOptionsTemplatesIdDelete``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 		return nil, err
 	}
 	return res, nil

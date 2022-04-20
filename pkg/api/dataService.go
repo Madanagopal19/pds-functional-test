@@ -5,7 +5,6 @@ import (
 	status "net/http"
 
 	pds "github.com/portworx/pds-api-go-client/pds/v1alpha1"
-	log "github.com/sirupsen/logrus"
 )
 
 type DataService struct {
@@ -18,8 +17,8 @@ func (ds *DataService) ListDataServices() ([]pds.ModelsDataService, error) {
 	dsModels, res, err := dsClient.ApiDataServicesGet(ds.context).Execute()
 
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiDataServicesGet``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return dsModels.GetData(), err
 }
@@ -29,8 +28,8 @@ func (ds *DataService) GetDataService(dataServiceId string) (*pds.ModelsDataServ
 	dsModel, res, err := dsClient.ApiDataServicesIdGet(ds.context, dataServiceId).Execute()
 
 	if res.StatusCode != status.StatusOK {
-		log.Errorf("Error when calling `ApiAccountsGet``: %v\n", err)
-		log.Error("Full HTTP response: %v\n", res)
+		log.Errorf("Error when calling `ApiDataServicesIdGet``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
 	}
 	return dsModel, err
 }
