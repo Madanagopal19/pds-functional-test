@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -24,7 +25,7 @@ var (
 	BLOBBackuptarget         = "agaurav-azure-target"
 	serviceType              = "LoadBalancer"
 	pdsNamespaces            []string
-	//serviceTypeOnprem        = "ClusterIP"
+
 	supportedDataServices = map[string]string{"cas": "Cassandra", "zk": "Zookeeper", "rmq": "Rabbitmq", "pg": "Postgresql"}
 
 	// supportedDataServices = map[string]string{"cas": "Cassandra", "zk": "Zookeeper", "kf": "Kafka", "rmq": "Rabbitmq", "pg": "Postgresql"}
@@ -99,6 +100,9 @@ func (suite *PDSTestSuite) SetupSuite() {
 func (s *PDSTestSuite) BeforeTest(suiteName, testName string) {
 	acc := s.components.Account
 	accounts, _ := acc.GetAccountsList()
+	if strings.EqualFold(s.env.CLUSTER_TYPE, "onprem") {
+		serviceType = "ClusterIP"
+	}
 
 	for i := 0; i < len(accounts); i++ {
 		log.Infof("Account Name: %v", accounts[i].GetName())
@@ -142,15 +146,15 @@ func (s *PDSTestSuite) BeforeTest(suiteName, testName string) {
 
 func (suite *PDSTestSuite) AfterTest(suiteName, testName string) {
 	log.Warn("Cleaning all the deployment created as part of this test run")
-	log.Info("Sleep for 10 minutes.")
-	time.Sleep(10 * time.Minute)
+	log.Info("Sleep for sometime.")
+	time.Sleep(1 * time.Minute)
 	for id := range deployementIdNameMap {
 		log.Infof("Deleting the deployment: %v", id)
 		suite.components.DataServiceDeployment.DeleteDeployment(id)
 		time.Sleep(sleepTime)
 	}
-	log.Info("Sleep for 10 minutes.")
-	time.Sleep(10 * time.Minute)
+	log.Info("Sleep for a minute.")
+	time.Sleep(1 * time.Minute)
 	for id := range deployementIdnameWithSchBkpMap {
 		backups, _ := suite.components.Backup.ListBackup(id)
 		for _, backup := range backups {
@@ -170,8 +174,8 @@ func (suite *PDSTestSuite) AfterTest(suiteName, testName string) {
 		suite.components.DataServiceDeployment.DeleteDeployment(id)
 		time.Sleep(15 * time.Second)
 	}
-	log.Info("Sleep for 10 minutes.")
-	time.Sleep(10 * time.Minute)
+	log.Info("Sleep for sometime.")
+	time.Sleep(1 * time.Minute)
 	for id := range deployementIdnameWithAdhocBkpMap {
 		backups, _ := suite.components.Backup.ListBackup(id)
 		for _, backup := range backups {
@@ -196,6 +200,6 @@ func (suite *PDSTestSuite) AfterTest(suiteName, testName string) {
 	}
 }
 
-func TestPDSSuite(t *testing.T) {
+func TestPDSTestSuite(t *testing.T) {
 	suite.Run(t, new(PDSTestSuite))
 }

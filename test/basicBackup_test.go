@@ -8,7 +8,7 @@ import (
 	. "github.com/portworx/pds-functional-test/pkg/common"
 )
 
-func (suite *PDSTestSuite) TestBasicBackupOperation() {
+func (suite *PDSTestSuite) TestBackup() {
 
 	var (
 		deploymentTargetId, storageTemplateId string
@@ -194,8 +194,8 @@ func (suite *PDSTestSuite) TestBasicBackupOperation() {
 
 	}
 
-	log.Infof("Sleeping for %v minutes", 5*time.Minute)
-	time.Sleep(5 * time.Minute)
+	log.Info("Sleep for sometime.")
+	time.Sleep(1 * time.Minute)
 	log.Info("Take Adhoc backups for dataservices")
 	for id := range deployementIdnameWithAdhocBkpMap {
 		for backupTarget := range backupTargetNameIdMap {
@@ -215,8 +215,8 @@ func (suite *PDSTestSuite) TestBasicBackupOperation() {
 
 	}
 
-	log.Infof("Sleeping for %v minutes", 5*time.Minute)
-	time.Sleep(5 * time.Minute)
+	log.Info("Sleep for sometime.")
+	time.Sleep(1 * time.Minute)
 	log.Info("Take Adhoc backups for dataservices created for scheduled backup")
 	for id := range deployementIdnameWithSchBkpMap {
 		for backupTarget := range backupTargetNameIdMap {

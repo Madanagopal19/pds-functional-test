@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -17,7 +18,7 @@ func (targetCluster *TargetCluster) RegisterToControlPlane(controlPlaneUrl strin
 	if err != nil {
 		return fmt.Errorf("unable to reach the control plane with following error - %v", err)
 	}
-	var cmd string
+	var cmd, currentHelmVerison string
 	apiEndpoint := fmt.Sprintf(controlPlaneUrl + "/api")
 	log.Infof("Verify if the namespace %s already exits.", pdsSystemNamespace)
 	isExist := IsNamespaceExist(pdsSystemNamespace, targetCluster.kubeconfig)
@@ -28,6 +29,12 @@ func (targetCluster *TargetCluster) RegisterToControlPlane(controlPlaneUrl strin
 		if len(pods) > 0 {
 			log.Warnf("Target cluster is already registered to control plane.")
 			cmd = fmt.Sprintf("helm list -A --kubeconfig %s", targetCluster.kubeconfig)
+			currentHelmVerison, _ = GetCurrentHelmVersion(targetCluster.kubeconfig)
+			if !strings.EqualFold(currentHelmVerison, helmChartversion) {
+				log.Infof("Upgrading PDS helm chart from %v to %v", currentHelmVerison, helmChartversion)
+				cmd = fmt.Sprintf("helm upgrade --create-namespace --namespace=%s pds pds-target --repo=https://portworx.github.io/pds-charts --version=%s --set tenantId=%s "+
+					"--set bearerToken=%s --set apiEndpoint=%s --kubeconfig %s", pdsSystemNamespace, helmChartversion, tenantId, bearerToken, apiEndpoint, targetCluster.kubeconfig)
+			}
 			isRegistered = true
 		}
 	}

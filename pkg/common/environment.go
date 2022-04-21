@@ -21,6 +21,7 @@ const (
 	chartPath            = "/pds-charts"
 	releaseName          = "myrelease"
 	pdsSystemNamespace   = "pds-system"
+	envClusterType       = "CLUSTER_TYPE"
 )
 
 // Environment lhasha
@@ -31,6 +32,7 @@ type Environment struct {
 	VAULT_TOKEN         string
 	PDS_USER_CREDENTIAL string
 	PDS_SECRET_KEY      string
+	CLUSTER_TYPE        string
 }
 
 type BearerToken struct {
@@ -51,6 +53,7 @@ func MustHaveEnvVariables() Environment {
 		VAULT_TOKEN:         mustGetEnvVariable(envVaultToken),
 		PDS_USER_CREDENTIAL: mustGetEnvVariable(envPDSUserCredential),
 		PDS_SECRET_KEY:      mustGetEnvVariable(envPDSSecretKey),
+		CLUSTER_TYPE:        mustGetEnvVariable(envClusterType),
 	}
 }
 
@@ -58,7 +61,7 @@ func MustHaveEnvVariables() Environment {
 func mustGetEnvVariable(key string) string {
 	value, isExist := os.LookupEnv(key)
 	if !isExist {
-		log.Errorf("Key: %v doesn't exist", key)
+		log.Panicf("Key: %v doesn't exist, Kindly visit -  https://github.com/portworx/pds-functional-test/blob/main/README.md#setting-up-the-environment-variable ", key)
 
 	}
 	return value
