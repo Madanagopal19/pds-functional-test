@@ -35,6 +35,8 @@
     export VAULT_HOST=<Vault URL>
     
     export VAULT_TOKEN=<Vault token>
+    
+    export CLUSTER_TYPE=<onprem or aks or eks>
 
 #### Test execution (ToDo:   Run using container/pod)
     go test ./test  -timeout 9999999s -v
