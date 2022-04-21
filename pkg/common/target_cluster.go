@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// TargetCluster khash
+// TargetCluster struct
 type TargetCluster struct {
 	kubeconfig string
 }
@@ -33,7 +33,7 @@ func (targetCluster *TargetCluster) RegisterToControlPlane(controlPlaneUrl strin
 	}
 
 	if !isRegistered {
-		log.Infof("Installing PDS to the helm version to %v", helmChartversion)
+		log.Infof("Installing PDS ( helm version -  %v)", helmChartversion)
 		cmd = fmt.Sprintf("helm install --create-namespace --namespace=%s pds pds-target --repo=https://portworx.github.io/pds-charts --version=%s --set tenantId=%s "+
 			"--set bearerToken=%s --set apiEndpoint=%s --kubeconfig %s", pdsSystemNamespace, helmChartversion, tenantId, bearerToken, apiEndpoint, targetCluster.kubeconfig)
 	}

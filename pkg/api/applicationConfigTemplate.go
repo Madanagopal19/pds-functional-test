@@ -38,10 +38,9 @@ func (at *AppConfigTemplate) GetTemplate(templateId string) (*pds.ModelsApplicat
 	return atModel, nil
 }
 
-func (at *AppConfigTemplate) CreateTemplate(tenantId string, deployTime bool, key string, value string, dataServiceId string, name string) (*pds.ModelsApplicationConfigurationTemplate, error) {
+func (at *AppConfigTemplate) CreateTemplate(tenantId string, dataServiceId string, name string, data []pds.ModelsConfigItem) (*pds.ModelsApplicationConfigurationTemplate, error) {
 	atClient := at.apiClient.ApplicationConfigurationTemplatesApi
 	log.Info("Create new resource template.")
-	data := []pds.ModelsConfigItem{pds.ModelsConfigItem{&deployTime, &key, &value}}
 	createRequest := pds.ControllersCreateApplicationConfigurationTemplatesRequest{data, &dataServiceId, &name}
 	atModel, res, err := atClient.ApiTenantsIdApplicationConfigurationTemplatesPost(at.context, tenantId).Body(createRequest).Execute()
 

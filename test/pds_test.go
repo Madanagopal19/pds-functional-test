@@ -28,7 +28,7 @@ var (
 	supportedDataServices = map[string]string{"cas": "Cassandra", "zk": "Zookeeper", "rmq": "Rabbitmq", "pg": "Postgresql"}
 
 	// supportedDataServices = map[string]string{"cas": "Cassandra", "zk": "Zookeeper", "kf": "Kafka", "rmq": "Rabbitmq", "pg": "Postgresql"}
-	//backupSupportedDataService = map[string]string{"cas": "Cassandra", "pg": "Postgresql"}
+	backupSupportedDataService = map[string]string{"cas": "Cassandra", "pg": "Postgresql"}
 	//futureSupportedDataService = map[string]string{"mdb": "Mongodb", "red": "Redis", "con": "Consul", "cbs": "Couchbase", "dse": "DatastaxEnterprise", "ess": "Elasticsearch"}
 )
 
@@ -55,6 +55,7 @@ const (
 	resourceTemplateName  = "Default"
 	appConfigTemplateName = "Default"
 	deploymentName        = "automation"
+	templateName          = "Default"
 )
 
 var (
@@ -65,6 +66,10 @@ var (
 	dataServiceNameDefaultAppConfigMap      = make(map[string]string)
 	deployementIdNameMap                    = make(map[string]string)
 	namespaceNameIdMap                      = make(map[string]string)
+	backuppolicyIdNameMap                   = make(map[string]string)
+	backupTargetNameIdMap                   = make(map[string]string)
+	deployementIdnameWithSchBkpMap          = make(map[string]string)
+	deployementIdnameWithAdhocBkpMap        = make(map[string]string)
 )
 
 func (suite *PDSTestSuite) SetupSuite() {
@@ -136,13 +141,56 @@ func (s *PDSTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *PDSTestSuite) AfterTest(suiteName, testName string) {
-	log.Info("Cleaning all the deployment created as part of this test run")
+	log.Warn("Cleaning all the deployment created as part of this test run")
+	log.Info("Sleep for 10 minutes.")
+	time.Sleep(10 * time.Minute)
 	for id := range deployementIdNameMap {
 		log.Infof("Deleting the deployment: %v", id)
 		suite.components.DataServiceDeployment.DeleteDeployment(id)
 		time.Sleep(sleepTime)
 	}
-
+	log.Info("Sleep for 10 minutes.")
+	time.Sleep(10 * time.Minute)
+	for id := range deployementIdnameWithSchBkpMap {
+		backups, _ := suite.components.Backup.ListBackup(id)
+		for _, backup := range backups {
+			backupId := backup.GetId()
+			log.Infof("Delete back up having Id - %v", backupId)
+			response, err := suite.components.Backup.DeleteBackup(backupId)
+			// Success is indicated with 2xx status codes:
+			statusOK := response.StatusCode >= 200 && response.StatusCode < 300
+			if !statusOK {
+				fmt.Println("Non-OK HTTP status:", response.StatusCode)
+				// You may read / inspect response body
+				log.Error(err)
+			}
+			time.Sleep(10 * time.Second)
+		}
+		log.Infof("Deleting the deployment: %v", id)
+		suite.components.DataServiceDeployment.DeleteDeployment(id)
+		time.Sleep(15 * time.Second)
+	}
+	log.Info("Sleep for 10 minutes.")
+	time.Sleep(10 * time.Minute)
+	for id := range deployementIdnameWithAdhocBkpMap {
+		backups, _ := suite.components.Backup.ListBackup(id)
+		for _, backup := range backups {
+			backupId := backup.GetId()
+			log.Infof("Delete back up having Id - %v", backupId)
+			response, err := suite.components.Backup.DeleteBackup(backupId)
+			// Success is indicated with 2xx status codes:
+			statusOK := response.StatusCode >= 200 && response.StatusCode < 300
+			if !statusOK {
+				fmt.Println("Non-OK HTTP status:", response.StatusCode)
+				// You may read / inspect response body
+				log.Error(err)
+			}
+			time.Sleep(10 * time.Second)
+		}
+		log.Infof("Deleting the deployment: %v", id)
+		suite.components.DataServiceDeployment.DeleteDeployment(id)
+		time.Sleep(25 * time.Second)
+	}
 	if suite.T().Failed() {
 		log.Errorf(fmt.Sprintf("Failed test %s:", testName))
 	}
