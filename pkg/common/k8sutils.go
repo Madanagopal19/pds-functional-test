@@ -143,15 +143,3 @@ func GetClusterId(pathToKubeconfig string) (string, error) {
 	}
 	return output, nil
 }
-
-func GetCurrentHelmVersion(pathToKubeconfig string) (string, error) {
-	log.Infof("Fetch Cluster id ")
-	cmd := fmt.Sprintf("helm list -n pds-system --kubeconfig %s", pathToKubeconfig)
-	output, _, err := ExecShell(cmd)
-	if err != nil {
-		log.Error(err)
-		return "Connection Refused!!", err
-	}
-	version := output[11:]
-	return version, nil
-}

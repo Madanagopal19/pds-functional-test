@@ -18,7 +18,7 @@ func (targetCluster *TargetCluster) RegisterToControlPlane(controlPlaneUrl strin
 	if err != nil {
 		return fmt.Errorf("unable to reach the control plane with following error - %v", err)
 	}
-	var cmd, currentHelmVerison string
+	var cmd string
 	apiEndpoint := fmt.Sprintf(controlPlaneUrl + "/api")
 	log.Infof("Verify if the namespace %s already exits.", pdsSystemNamespace)
 	isExist := IsNamespaceExist(pdsSystemNamespace, targetCluster.kubeconfig)
@@ -29,9 +29,8 @@ func (targetCluster *TargetCluster) RegisterToControlPlane(controlPlaneUrl strin
 		if len(pods) > 0 {
 			log.Warnf("Target cluster is already registered to control plane.")
 			cmd = fmt.Sprintf("helm list -A --kubeconfig %s", targetCluster.kubeconfig)
-			currentHelmVerison, _ = GetCurrentHelmVersion(targetCluster.kubeconfig)
-			if !strings.EqualFold(currentHelmVerison, helmChartversion) {
-				log.Infof("Upgrading PDS helm chart from %v to %v", currentHelmVerison, helmChartversion)
+			if !targetCluster.isLatestHelm() {
+				log.Infof("Upgrading PDS helm chart from to %v", helmChartversion)
 				cmd = fmt.Sprintf("helm upgrade --create-namespace --namespace=%s pds pds-target --repo=https://portworx.github.io/pds-charts --version=%s --set tenantId=%s "+
 					"--set bearerToken=%s --set apiEndpoint=%s --kubeconfig %s", pdsSystemNamespace, helmChartversion, tenantId, bearerToken, apiEndpoint, targetCluster.kubeconfig)
 			}
@@ -51,11 +50,11 @@ func (targetCluster *TargetCluster) RegisterToControlPlane(controlPlaneUrl strin
 		return err
 	}
 	log.Infof("Terminal output -> %v", output)
-	time.Sleep(30 * time.Second)
+	time.Sleep(20 * time.Second)
 	log.Infof("Watch states of pods in %s namespace", pdsSystemNamespace)
 	WatchPodsStatus(pdsSystemNamespace, targetCluster.kubeconfig)
 
-	time.Sleep(30 * time.Second)
+	time.Sleep(20 * time.Second)
 	log.Infof("Verify the health of all the pods in %s namespace", pdsSystemNamespace)
 	CheckPodsHealth(pdsSystemNamespace, targetCluster.kubeconfig)
 	return err
@@ -98,6 +97,17 @@ func (targetCluster *TargetCluster) CreatePDSNamespace(name string) error {
 	log.Infof("Terminal output ----> %v", output)
 
 	return nil
+}
+
+func (targetCluster *TargetCluster) isLatestHelm() bool {
+	cmd := fmt.Sprintf(" helm ls --all -n pds-system --kubeconfig %s | tail -n+2 | awk '{print $8}' ", targetCluster.kubeconfig)
+	output, _, err := ExecShell(cmd)
+	if err != nil {
+		log.Panic(err)
+	}
+	log.Info("Helm chart status - %v", output)
+	return !strings.EqualFold(output, "pending-upgrade")
+
 }
 
 // NewTargetCluster lsajajsklj
