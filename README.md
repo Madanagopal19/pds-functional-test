@@ -10,23 +10,15 @@
 
 ## Prerequisites
 
-### Install helm
+#### Install helm
   ```
   curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
   chmod 700 get_helm.sh
   ./get_helm.sh
   ```
 
-#### Install vault 
-    wget https://releases.hashicorp.com/vault/1.10.0/vault_1.10.0_linux_amd64.zip (Choose the version accordingle)
-    
-    unzip vault_1.10.0_linux_amd64.zip
-    
-    mv vault /usr/bin
-    
-    Verify by running vault in shell.
-
 #### Install kubectl
+   https://kubernetes.io/docs/tasks/tools/
 
 ## Manually triggering the test run
 
