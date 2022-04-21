@@ -20,7 +20,6 @@ func (suite *PDSTestSuite) TestBasicBackupOperation() {
 		versionComponent                      = suite.components.Version
 		imageComponent                        = suite.components.Image
 		appConfigComponent                    = suite.components.AppConfigTemplate
-		dataServiceDeploymentComponent        = suite.components.DataServiceDeployment
 	)
 
 	clusterId, err := GetClusterId(suite.env.TARGET_KUBECONFIG)
@@ -133,7 +132,7 @@ func (suite *PDSTestSuite) TestBasicBackupOperation() {
 		n := rand.Int() % len(pdsNamespaces)
 		namespace := pdsNamespaces[n]
 		namespaceId := namespaceNameIdMap[namespace]
-		log.Infof("Created %v deployment  in the namespace %v with no scheduled back up.", backupSupportedDataService[i], namespace)
+		log.Infof("Created %v deployment  in the namespace %v with scheduled back up enabled.", backupSupportedDataService[i], namespace)
 		deployment, _ :=
 			suite.components.DataServiceDeployment.CreateDeploymentWithScehduleBackup(projectId,
 				deploymentTargetId,
@@ -162,23 +161,22 @@ func (suite *PDSTestSuite) TestBasicBackupOperation() {
 		log.Infof("Deployment state - %v,Health status -  %v,Replicas - %v, Ready replicas - %v", deployment.GetState(), status.GetHealth(), status.GetReplicas(), status.GetReadyReplicas())
 
 	}
-	log.Info("Create dataservice to perform adhoc backups.")
+	log.Info("Create dataservice with no scheduled backup enabled.")
 	for i := range backupSupportedDataService {
 		log.Infof("Key: %v, Value %v", backupSupportedDataService[i], dataServiceNameDefaultAppConfigMap[backupSupportedDataService[i]])
 		n := rand.Int() % len(pdsNamespaces)
 		namespace := pdsNamespaces[n]
 		namespaceId := namespaceNameIdMap[namespace]
 		log.Infof("Created %v deployment  in the namespace %v with no scheduled back up.", backupSupportedDataService[i], namespace)
-
 		deployment, _ :=
-			dataServiceDeploymentComponent.CreateDeployment(projectId,
+			suite.components.DataServiceDeployment.CreateDeployment(projectId,
 				deploymentTargetId,
 				dnsZone,
 				deploymentNameAdhoc,
 				namespaceId,
 				dataServiceNameDefaultAppConfigMap[backupSupportedDataService[i]],
 				dataServiceNameImagesMap[backupSupportedDataService[i]],
-				defaultNumPods,
+				3,
 				serviceType,
 				dataServiceDefaultResourceTemplateIdMap[backupSupportedDataService[i]],
 				storageTemplateId,

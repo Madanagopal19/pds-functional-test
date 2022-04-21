@@ -19,7 +19,6 @@ func (suite *PDSTestSuite) TestDeployDataServices() {
 		versionComponent                      = suite.components.Version
 		imageComponent                        = suite.components.Image
 		appConfigComponent                    = suite.components.AppConfigTemplate
-		dataServiceDeploymentComponent        = suite.components.DataServiceDeployment
 	)
 
 	clusterId, err := GetClusterId(suite.env.TARGET_KUBECONFIG)
@@ -106,37 +105,36 @@ func (suite *PDSTestSuite) TestDeployDataServices() {
 	}
 
 	log.Info("Create dataservices")
+	log.Info("Create dataservice with no scheduled backup enabled.")
 	for i := range supportedDataServices {
 		log.Infof("Key: %v, Value %v", supportedDataServices[i], dataServiceNameDefaultAppConfigMap[supportedDataServices[i]])
 		n := rand.Int() % len(pdsNamespaces)
 		namespace := pdsNamespaces[n]
 		namespaceId := namespaceNameIdMap[namespace]
-		log.Infof("Create %v deployment  in the namespace %v", supportedDataServices[i], namespace)
-
+		log.Infof("Created %v deployment  in the namespace %v with no scheduled back up.", supportedDataServices[i], namespace)
 		deployment, _ :=
-			dataServiceDeploymentComponent.CreateDeployment(projectId,
+			suite.components.DataServiceDeployment.CreateDeployment(projectId,
 				deploymentTargetId,
 				dnsZone,
 				deploymentName,
 				namespaceId,
 				dataServiceNameDefaultAppConfigMap[supportedDataServices[i]],
 				dataServiceNameImagesMap[supportedDataServices[i]],
-				defaultNumPods,
+				3,
 				serviceType,
 				dataServiceDefaultResourceTemplateIdMap[supportedDataServices[i]],
 				storageTemplateId,
 			)
-
 		deployementIdNameMap[deployment.GetId()] = deployment.GetName()
-		status, _ := dataServiceDeploymentComponent.GetDeploymentSatus(deployment.GetId())
+		status, _ := suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
 		sleeptime := 0
 		for status.GetHealth() != "Healthy" && sleeptime < duration {
-			time.Sleep(sleepTime * time.Second)
-			sleeptime += sleepTime
-			status, _ = dataServiceDeploymentComponent.GetDeploymentSatus(deployment.GetId())
+			time.Sleep(10 * time.Second)
+			sleeptime += 10
+			status, _ = suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
 			log.Infof("Health status -  %v", status.GetHealth())
 		}
-		log.Infof("Deployment state - %v,Health status -  %v,Replicas - %v, Ready replicas - %v", deployment.GetState(), status.GetHealth(), status.GetReplicas(), status.GetReadyReplicas())
+		log.Infof("Deployment details ---> Id:%v ,Health status -  %v,Replicas - %v, Ready replicas - %v", deployment.GetId(), status.GetHealth(), status.GetReplicas(), status.GetReadyReplicas())
 
 	}
 
