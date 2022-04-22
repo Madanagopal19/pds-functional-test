@@ -143,3 +143,42 @@ func GetClusterId(pathToKubeconfig string) (string, error) {
 	}
 	return output, nil
 }
+
+func DeleteNamespace(name string, pathToKubeconfig string) error {
+	log.Infof("Deleting all the resources in %s namespace.", name)
+	cmd := fmt.Sprintf("kubectl delete all --all -n %s --kubeconfig %s", name, pathToKubeconfig)
+	output, _, err := ExecShell(cmd)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Info(output)
+	log.Infof("Deleting the namespace %s", name)
+	cmd = fmt.Sprintf("kubectl delete ns %s --kubeconfig %s", name, pathToKubeconfig)
+	output, _, err = ExecShell(cmd)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Info(output)
+	return err
+}
+
+func DeleteAllPVC(namespace string, pathToKubeconfig string) error {
+	log.Infof("Deleting all pvc in namespace %s ", namespace)
+	cmd := fmt.Sprintf("kubectl delete pvc --all -n %s --kubeconfig %s", namespace, pathToKubeconfig)
+	output, _, err := ExecShell(cmd)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Info(output)
+	return err
+}
+
+func DeleteAllReleasedPV(pathToKubeconfig string) error {
+	cmd := fmt.Sprintf("kubectl get pv --kubeconfig %s | tail -n+2 | awk '$5 == \"Released\" {print $1}' | xargs kubectl delete pv --kubeconfig %s", pathToKubeconfig, pathToKubeconfig)
+	output, _, err := ExecShell(cmd)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Info(output)
+	return err
+}

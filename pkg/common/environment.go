@@ -91,7 +91,7 @@ func GetBearerToken(isAdmin bool) string {
 	}
 	clientId := fmt.Sprintf("%s", secret.Data["client-id"])
 	clientSecret := fmt.Sprintf("%s", secret.Data["client-secret"])
-	url := "http://master-staging-api.portworx.dev/api/protocol/openid-connect/token"
+	url := "https://apicentral.portworx.com/api/protocol/openid-connect/token"
 	grantType := "password"
 	var username, password string
 	if isAdmin {

@@ -1,8 +1,10 @@
 package test
 
 import (
+	"fmt"
 	"math/rand"
 	"reflect"
+	"strconv"
 	"time"
 
 	. "github.com/portworx/pds-functional-test/pkg/common"
@@ -106,13 +108,6 @@ func (suite *PDSTestSuite) TestBackup() {
 	}
 
 	log.Infof("Get the backup details")
-	log.Infof("Get the backup policy")
-	backupPolicies, _ := suite.components.BackupPolicy.ListBackupPolicy(tenantId)
-	for i := 0; i < len(backupPolicies); i++ {
-		backuppolicyIdNameMap[backupPolicies[i].GetId()] = backupPolicies[i].GetName()
-	}
-	backupPolicyId := MapRandomKeyGet(backuppolicyIdNameMap).(string)
-
 	log.Infof("Get the backup target")
 	backupTargets, _ := suite.components.BackupTarget.ListBackupTarget(tenantId)
 	for i := 0; i < len(backupTargets); i++ {
@@ -122,51 +117,57 @@ func (suite *PDSTestSuite) TestBackup() {
 		}
 
 	}
-	duration := 600
-	deploymentNameSch := "agaurav-schbkp-1"
-	deploymentNameAdhoc := "agaurav-adhocBkp-1"
 
-	log.Info("Create dataservice with scheduled backup enabled")
-	for i := range backupSupportedDataService {
-		log.Infof("Key: %v, Value %v", backupSupportedDataService[i], dataServiceNameDefaultAppConfigMap[backupSupportedDataService[i]])
-		n := rand.Int() % len(pdsNamespaces)
-		namespace := pdsNamespaces[n]
-		namespaceId := namespaceNameIdMap[namespace]
-		log.Infof("Created %v deployment  in the namespace %v with scheduled back up enabled.", backupSupportedDataService[i], namespace)
-		deployment, _ :=
-			suite.components.DataServiceDeployment.CreateDeploymentWithScehduleBackup(projectId,
-				deploymentTargetId,
-				dnsZone,
-				deploymentNameSch,
-				namespaceId,
-				dataServiceNameDefaultAppConfigMap[backupSupportedDataService[i]],
-				dataServiceNameImagesMap[backupSupportedDataService[i]],
-				3,
-				serviceType,
-				dataServiceDefaultResourceTemplateIdMap[backupSupportedDataService[i]],
-				storageTemplateId,
-				backupPolicyId,
-				backupTargetNameIdMap[S3BackupTarget],
-			)
-		deployementIdnameWithSchBkpMap[deployment.GetId()] = deployment.GetName()
+	log.Infof("Get the backup policy")
+	backupPolicies, _ := suite.components.BackupPolicy.ListBackupPolicy(tenantId)
+	for j, backupPolicy := range backupPolicies {
+		log.Info("Create dataservice with scheduled backup enabled")
+		deploymentNameSch := fmt.Sprintf("agaurav-schbkp-%s", strconv.Itoa(j))
+		for i := range backupSupportedDataService {
+			log.Infof("Key: %v, Value %v", backupSupportedDataService[i], dataServiceNameDefaultAppConfigMap[backupSupportedDataService[i]])
+			n := rand.Int() % len(pdsNamespaces)
+			namespace := pdsNamespaces[n]
+			namespaceId := namespaceNameIdMap[namespace]
+			for _, backupTgt := range []string{S3BackupTarget, S3CompatibleBackupTarget, BLOBBackuptarget} {
+				log.Infof("Created %v deployment  in the namespace %v with scheduled back up enabled.", backupSupportedDataService[i], namespace)
+				deployment, _ :=
+					suite.components.DataServiceDeployment.CreateDeploymentWithScehduleBackup(projectId,
+						deploymentTargetId,
+						dnsZone,
+						deploymentNameSch,
+						namespaceId,
+						dataServiceNameDefaultAppConfigMap[backupSupportedDataService[i]],
+						dataServiceNameImagesMap[backupSupportedDataService[i]],
+						3,
+						serviceType,
+						dataServiceDefaultResourceTemplateIdMap[backupSupportedDataService[i]],
+						storageTemplateId,
+						backupPolicy.GetId(),
+						backupTargetNameIdMap[backupTgt],
+					)
+				deployementIdnameWithSchBkpMap[deployment.GetId()] = deployment.GetName()
 
-		status, _ := suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
-		sleeptime := 0
-		for status.GetHealth() != "Healthy" && sleeptime < duration {
-			time.Sleep(15 * time.Second)
-			sleeptime += 15
-			status, _ = suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
-			log.Infof("Health status -  %v", status.GetHealth())
+				status, _ := suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
+				sleeptime := 0
+				for status.GetHealth() != "Healthy" && sleeptime < duration {
+					time.Sleep(15 * time.Second)
+					sleeptime += 15
+					status, _ = suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
+					log.Infof("Health status -  %v", status.GetHealth())
+				}
+				log.Infof("Deployment details: Health status -  %v,Replicas - %v, Ready replicas - %v", status.GetHealth(), status.GetReplicas(), status.GetReadyReplicas())
+			}
 		}
-		log.Infof("Deployment state - %v,Health status -  %v,Replicas - %v, Ready replicas - %v", deployment.GetState(), status.GetHealth(), status.GetReplicas(), status.GetReadyReplicas())
-
 	}
-	log.Info("Create dataservice with no scheduled backup enabled.")
+
+	log.Info("Create dataservice with no scheduled backup enabled.(Adhoc only)")
 	for i := range backupSupportedDataService {
+
 		log.Infof("Key: %v, Value %v", backupSupportedDataService[i], dataServiceNameDefaultAppConfigMap[backupSupportedDataService[i]])
 		n := rand.Int() % len(pdsNamespaces)
 		namespace := pdsNamespaces[n]
 		namespaceId := namespaceNameIdMap[namespace]
+		deploymentNameAdhoc := fmt.Sprintf("agaurav-adhocBkp-%s", strconv.Itoa(rand.Int()))
 		log.Infof("Created %v deployment  in the namespace %v with no scheduled back up.", backupSupportedDataService[i], namespace)
 		deployment, _ :=
 			suite.components.DataServiceDeployment.CreateDeployment(projectId,
@@ -190,7 +191,7 @@ func (suite *PDSTestSuite) TestBackup() {
 			status, _ = suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
 			log.Infof("Health status -  %v", status.GetHealth())
 		}
-		log.Infof("Deployment state - %v,Health status -  %v,Replicas - %v, Ready replicas - %v", deployment.GetState(), status.GetHealth(), status.GetReplicas(), status.GetReadyReplicas())
+		log.Infof("Deployment details: Health status -  %v,Replicas - %v, Ready replicas - %v", status.GetHealth(), status.GetReplicas(), status.GetReadyReplicas())
 
 	}
 
@@ -202,17 +203,17 @@ func (suite *PDSTestSuite) TestBackup() {
 			log.Infof("Creating ADHOC backup for deployment -  %v to backup target - %v", deployementIdnameWithAdhocBkpMap[id], backupTarget)
 			backup, _ := suite.components.Backup.CreateBackup(id, backupTargetNameIdMap[backupTarget], 30, true)
 			log.Info(backup.GetState())
-			jobs, _ := suite.components.BackupJob.ListBackupJobs(backup.GetId())
 			sleeptime := 0
-			for _, job := range jobs {
-				for job.GetStatus() == "Succeeded" && sleeptime < duration {
-					time.Sleep(15 * time.Second)
-					sleeptime += 15
-					log.Infof("Backup Job Name - %v,  Job status %v", job.GetName(), job.GetStatus())
-				}
+			for backup.GetState() != "created" && sleeptime < duration {
+				time.Sleep(15 * time.Second)
+				sleeptime += 15
+				log.Infof("Backup state - %v,  Backup type %v", backup.GetState(), backup.GetBackupType())
 			}
+			if backup.GetState() != "created" {
+				log.Infof("Backup- %s stuck in %s state even after 15 min.", backup.GetId(), backup.GetState())
+			}
+			log.Infof("Backup state - %v,  Backup type %v", backup.GetState(), backup.GetBackupType())
 		}
-
 	}
 
 	log.Info("Sleep for sometime.")
@@ -223,15 +224,17 @@ func (suite *PDSTestSuite) TestBackup() {
 			log.Infof("Creating ADHOC backup for deployment -  %v to backup target - %v", deployementIdnameWithSchBkpMap[id], backupTarget)
 			backup, _ := suite.components.Backup.CreateBackup(id, backupTargetNameIdMap[backupTarget], 30, true)
 			log.Info(backup.GetState())
-			jobs, _ := suite.components.BackupJob.ListBackupJobs(backup.GetId())
 			sleeptime := 0
-			for _, job := range jobs {
-				for job.GetStatus() == "Succeeded" && sleeptime < duration {
-					time.Sleep(15 * time.Second)
-					sleeptime += 15
-					log.Infof("Backup Job Name - %v,  Job status %v", job.GetName(), job.GetStatus())
-				}
+			for backup.GetState() != "created" && sleeptime < duration {
+				time.Sleep(15 * time.Second)
+				sleeptime += 15
+				log.Infof("Backup state - %v,  Backup type %v", backup.GetState(), backup.GetBackupType())
 			}
+			if backup.GetState() != "created" {
+				log.Infof("Backup- %s stuck in %s state even after 15 min.", backup.GetId(), backup.GetState())
+			}
+			log.Infof("Backup state - %v,  Backup type %v", backup.GetState(), backup.GetBackupType())
+
 		}
 
 	}

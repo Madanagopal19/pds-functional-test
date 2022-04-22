@@ -27,14 +27,15 @@ func (targetCluster *TargetCluster) RegisterToControlPlane(controlPlaneUrl strin
 		log.Infof("%s namespace already exists.", pdsSystemNamespace)
 		pods := ListPods(pdsSystemNamespace, targetCluster.kubeconfig)
 		if len(pods) > 0 {
-			log.Warnf("Target cluster is already registered to control plane.")
-			cmd = fmt.Sprintf("helm list -A --kubeconfig %s", targetCluster.kubeconfig)
+			log.Warnf("Target cluster is already registered to control plane, but helm chart is not updated.")
 			if !targetCluster.isLatestHelm() {
-				log.Infof("Upgrading PDS helm chart from to %v", helmChartversion)
-				cmd = fmt.Sprintf("helm upgrade --create-namespace --namespace=%s pds pds-target --repo=https://portworx.github.io/pds-charts --version=%s --set tenantId=%s "+
+				log.Infof("Upgrading PDS helm chart to %v", helmChartversion)
+				cmd = fmt.Sprintf("helm upgrade --create-namespace --namespace=%s pds pds-target --repo=https://portworx.github.io/pds-charts --version=%v --set tenantId=%s "+
 					"--set bearerToken=%s --set apiEndpoint=%s --kubeconfig %s", pdsSystemNamespace, helmChartversion, tenantId, bearerToken, apiEndpoint, targetCluster.kubeconfig)
 			}
 			isRegistered = true
+		} else {
+			log.Infof("Just the %s namespace exists, but no pods are available.", pdsSystemNamespace)
 		}
 	}
 
@@ -45,8 +46,8 @@ func (targetCluster *TargetCluster) RegisterToControlPlane(controlPlaneUrl strin
 	}
 	output, _, err := ExecShell(cmd)
 	if err != nil {
-		log.Warn("Kindly remove the PDS chart properly and retry. CMD>> helm uninstall  pds --namespace pds-system --kubeconfig $KUBECONFIG")
-		log.Error(err)
+		log.Warn("Kindly remove the PDS chart properly and retry if that helps(or slack us for more). CMD>> helm uninstall  pds --namespace pds-system --kubeconfig $KUBECONFIG")
+		log.Panic(err)
 		return err
 	}
 	log.Infof("Terminal output -> %v", output)
@@ -100,13 +101,33 @@ func (targetCluster *TargetCluster) CreatePDSNamespace(name string) error {
 }
 
 func (targetCluster *TargetCluster) isLatestHelm() bool {
-	cmd := fmt.Sprintf(" helm ls --all -n pds-system --kubeconfig %s | tail -n+2 | awk '{print $8}' ", targetCluster.kubeconfig)
+	cmd := fmt.Sprintf(" helm ls --all -n pds-system --kubeconfig %s ", targetCluster.kubeconfig)
 	output, _, err := ExecShell(cmd)
 	if err != nil {
 		log.Panic(err)
 	}
-	log.Info("Helm chart status - %v", output)
+	log.Infof(output)
+	cmd = fmt.Sprintf(" helm ls --all -n pds-system --kubeconfig %s | tail -n+2 | awk '{print $8}' ", targetCluster.kubeconfig)
+	output, _, err = ExecShell(cmd)
+	if err != nil {
+		log.Panic(err)
+	}
+	output = strings.TrimSpace(output)
+	log.Infof("Helm chart Status- %v", strings.EqualFold(output, "pending-upgrade"))
 	return !strings.EqualFold(output, "pending-upgrade")
+
+}
+
+func (targetCluster *TargetCluster) DeRegisterFromControlPlane() {
+	log.Info("Derisgtering the target cluster from control plane.")
+	cmd := fmt.Sprintf("helm uninstall --namespace=pds-system pds --kubeconfig %s ", targetCluster.kubeconfig)
+	output, _, err := ExecShell(cmd)
+	if err != nil {
+		log.Panic(err)
+	}
+	log.Info(output)
+	log.Info("Deleting the pds-system namespace.")
+	DeleteNamespace("pds-system", targetCluster.kubeconfig)
 
 }
 

@@ -104,8 +104,7 @@ func (suite *PDSTestSuite) TestDeployDataServices() {
 
 	}
 
-	log.Info("Create dataservices")
-	log.Info("Create dataservice with no scheduled backup enabled.")
+	log.Info("Create dataservices without backup.")
 	for i := range supportedDataServices {
 		log.Infof("Key: %v, Value %v", supportedDataServices[i], dataServiceNameDefaultAppConfigMap[supportedDataServices[i]])
 		n := rand.Int() % len(pdsNamespaces)
@@ -134,7 +133,7 @@ func (suite *PDSTestSuite) TestDeployDataServices() {
 			status, _ = suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
 			log.Infof("Health status -  %v", status.GetHealth())
 		}
-		log.Infof("Deployment details ---> Id:%v ,Health status -  %v,Replicas - %v, Ready replicas - %v", deployment.GetId(), status.GetHealth(), status.GetReplicas(), status.GetReadyReplicas())
+		log.Infof("Deployment details: Health status -  %v,Replicas - %v, Ready replicas - %v", status.GetHealth(), status.GetReplicas(), status.GetReadyReplicas())
 
 	}
 

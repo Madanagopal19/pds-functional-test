@@ -20,9 +20,9 @@ var (
 
 	log                      = logger.Log
 	accountName              = "Portworx"
-	S3BackupTarget           = "agaurav-aws-target"
-	S3CompatibleBackupTarget = "agaurav-s3-compatible-target"
-	BLOBBackuptarget         = "agaurav-azure-target"
+	S3BackupTarget           = "pds-qa-s3-target"
+	S3CompatibleBackupTarget = "pds-qa-s3-compatible-target"
+	BLOBBackuptarget         = "pds-qa-blob-target"
 	serviceType              = "LoadBalancer"
 	pdsNamespaces            []string
 
@@ -44,19 +44,19 @@ type PDSTestSuite struct {
 }
 
 const (
-	duration  = 600
+	duration  = 900
 	sleepTime = 10
 
 	defaultNumPods = 3
-	dnsZone        = "portworx.pds-dns-dev.io"
+	dnsZone        = "portworx.pds-dns.io"
 
 	// FIX-ME
-	// Create the template manually for all the data serices with below name (i.e Default)
-	storageTemplateName   = "Default"
-	resourceTemplateName  = "Default"
-	appConfigTemplateName = "Default"
+	// Create the template manually for all the data serices with below name (i.e QaDefault)
+	storageTemplateName   = "QaDefault"
+	resourceTemplateName  = "QaDefault"
+	appConfigTemplateName = "QaDefault"
 	deploymentName        = "automation"
-	templateName          = "Default"
+	templateName          = "QaDefault"
 )
 
 var (
@@ -75,6 +75,22 @@ var (
 
 func (suite *PDSTestSuite) SetupSuite() {
 
+	log.Info(`
+		==========================================================================
+		@owner: PDS-QA team
+		Please go through https://github.com/portworx/pds-functional-test
+		Right now we supported only basic sanity tests.
+		Resources(Creation/deletion) as part of the runs.
+			- PDS Helm chart will be installed to the lastest supported version w.r.t your control plane.
+			- Namespaces - pds-automation-*
+			- PVC / PV 
+		- Prerequsite
+			- Please make sure kubectl and helm are installed.
+			- "Default" Storage option / Resource / Appconfig template should be present.
+			- Create the template manually for all the data serices having name as Default if its not already populated.
+
+		==========================================================================
+	`)
 	// Perform basic setup with sanity checks.
 	log.Info("Check for environmental variable.")
 	suite.env = MustHaveEnvVariables()
@@ -95,12 +111,9 @@ func (suite *PDSTestSuite) SetupSuite() {
 	suite.apiClient = pds.NewAPIClient(apiConf)
 	suite.components = api.NewComponents(suite.ctx, suite.apiClient)
 
-}
-
-func (s *PDSTestSuite) BeforeTest(suiteName, testName string) {
-	acc := s.components.Account
+	acc := suite.components.Account
 	accounts, _ := acc.GetAccountsList()
-	if strings.EqualFold(s.env.CLUSTER_TYPE, "onprem") {
+	if strings.EqualFold(suite.env.CLUSTER_TYPE, "onprem") {
 		serviceType = "ClusterIP"
 	}
 
@@ -111,40 +124,43 @@ func (s *PDSTestSuite) BeforeTest(suiteName, testName string) {
 		}
 	}
 	log.Infof("Account Detail- Name: %s, UUID: %s ", accountName, accountId)
-	tnts := s.components.Tenant
+	tnts := suite.components.Tenant
 	tenants, _ := tnts.GetTenantsList(accountId)
 	tenantId = tenants[0].GetId()
 	tenantName := tenants[0].GetName()
 	log.Infof("Tenant Details- Name: %s, UUID: %s ", tenantName, tenantId)
-	projcts := s.components.Project
+	projcts := suite.components.Project
 	projects, _ := projcts.GetprojectsList(tenantId)
 	projectId = projects[0].GetId()
 	projectName := projects[0].GetName()
 	log.Infof("Project Details- Name: %s, UUID: %s ", projectName, projectId)
 
 	log.Info("Get helm version")
-	version, _ := s.components.ApiVersion.GetHelmChartVersion()
+	version, _ := suite.components.ApiVersion.GetHelmChartVersion()
 	log.Infof("Helm chart Version : %s ", version)
 
-	clusterId, err := GetClusterId(s.env.TARGET_KUBECONFIG)
+	clusterId, err := GetClusterId(suite.env.TARGET_KUBECONFIG)
 	if err != nil {
 		log.Panicf("Unable to fetch the cluster Id")
 	}
 
-	log.Infof("Register cluster %s to control plane %v ", clusterId, s.env.CONTROL_PLANE_URL)
-	err = s.TargetCluster.RegisterToControlPlane(s.env.CONTROL_PLANE_URL, version, GetBearerToken(true), tenantId)
+	log.Infof("Register cluster %s to control plane %v ", clusterId, suite.env.CONTROL_PLANE_URL)
+	err = suite.TargetCluster.RegisterToControlPlane(suite.env.CONTROL_PLANE_URL, version, GetBearerToken(true), tenantId)
 	if err != nil {
-		log.Panicf("Unable to register the target cluster to control plane %v", s.env.CONTROL_PLANE_URL)
+		log.Panicf("Unable to register the target cluster to control plane %v", suite.env.CONTROL_PLANE_URL)
 	}
 	log.Info("Creating namespaces for data service deployment")
-	pdsNamespaces = []string{"automation-1", "automation-2", "automation-3"}
+	pdsNamespaces = []string{"pds-automation-1", "pds-automation-2", "pds-automation-3"}
 	for _, ns := range pdsNamespaces {
 		log.Infof("Namespace name - %s", ns)
-		s.TargetCluster.CreatePDSNamespace(ns)
+		suite.TargetCluster.CreatePDSNamespace(ns)
 	}
+
 }
 
-func (suite *PDSTestSuite) AfterTest(suiteName, testName string) {
+func (suite *PDSTestSuite) TearDownSuite() {
+	log.Info("Sleeping for 5 minutes before teardown.")
+	time.Sleep(5 * time.Minute)
 	log.Warn("Cleaning all the deployment created as part of this test run")
 	log.Info("Sleep for sometime.")
 	time.Sleep(1 * time.Minute)
@@ -195,9 +211,21 @@ func (suite *PDSTestSuite) AfterTest(suiteName, testName string) {
 		suite.components.DataServiceDeployment.DeleteDeployment(id)
 		time.Sleep(25 * time.Second)
 	}
-	if suite.T().Failed() {
-		log.Errorf(fmt.Sprintf("Failed test %s:", testName))
+
+	log.Info("Deleting all the Persistent Volume claims created as part of this test run")
+	for _, ns := range pdsNamespaces {
+		DeleteAllPVC(ns, suite.env.TARGET_KUBECONFIG)
 	}
+
+	log.Info("Deleting all the Released Persistent volume")
+	DeleteAllReleasedPV(suite.env.TARGET_KUBECONFIG)
+
+	log.Info("Deleting all the namesapce created for deployment.")
+	for _, ns := range pdsNamespaces {
+		DeleteNamespace(ns, suite.env.TARGET_KUBECONFIG)
+	}
+	suite.TargetCluster.DeRegisterFromControlPlane()
+
 }
 
 func TestPDSTestSuite(t *testing.T) {
