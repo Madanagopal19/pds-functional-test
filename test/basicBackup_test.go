@@ -124,7 +124,7 @@ func (suite *PDSTestSuite) TestBackup() {
 	backupPolicies, _ := suite.components.BackupPolicy.ListBackupPolicy(tenantId)
 	log.Info("Deploy data serviced with all available back up policies.")
 	for _, backupPolicy := range backupPolicies {
-		log.Info("Create dataservice having backup policy - %s", backupPolicy.GetName())
+		log.Infof("Create dataservice having backup policy - %s", backupPolicy.GetName())
 		backupPolicyId := backupPolicy.GetId()
 		backupPolicyName := backupPolicy.GetName()
 		deploymentNameSch := fmt.Sprintf("test-schbkp-%s", strconv.Itoa(rand.Int()))
