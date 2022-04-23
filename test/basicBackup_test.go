@@ -32,9 +32,11 @@ func (suite *PDSTestSuite) TestBackup() {
 	log.Info("Get the Target cluster details")
 	targetClusters, _ := deploymentTargetComponent.ListDeploymentTargetsBelongsToTenant(tenantId)
 	for i := 0; i < len(targetClusters); i++ {
-		if targetClusters[i].GetClusterId() == clusterId {
+		if targetClusters[i].GetClusterId() == clusterId && targetClusters[i].GetStatus() == "healthy" {
 			deploymentTargetId = targetClusters[i].GetId()
 			log.Infof("Cluster ID: %v, Name: %v,Status: %v", targetClusters[i].GetClusterId(), targetClusters[i].GetName(), targetClusters[i].GetStatus())
+		} else {
+			suite.T().Fatalf("Cluster %s (Id) is unhealthy, hence can't proceed the deployment", clusterId)
 		}
 	}
 
@@ -86,7 +88,7 @@ func (suite *PDSTestSuite) TestBackup() {
 		}
 	}
 
-	log.Infof("Get the Versions.")
+	log.Infof("Get the Images.")
 	for key := range dataServiceNameVersionMap {
 		images, _ := imageComponent.ListImages(dataServiceNameVersionMap[key][0])
 		for i := 0; i < len(images); i++ {
@@ -120,16 +122,19 @@ func (suite *PDSTestSuite) TestBackup() {
 
 	log.Infof("Get the backup policy")
 	backupPolicies, _ := suite.components.BackupPolicy.ListBackupPolicy(tenantId)
-	for j, backupPolicy := range backupPolicies {
-		log.Info("Create dataservice with scheduled backup enabled")
-		deploymentNameSch := fmt.Sprintf("agaurav-schbkp-%s", strconv.Itoa(j))
+	log.Info("Deploy data serviced with all available back up policies.")
+	for _, backupPolicy := range backupPolicies {
+		log.Info("Create dataservice having backup policy - %s", backupPolicy.GetName())
+		backupPolicyId := backupPolicy.GetId()
+		backupPolicyName := backupPolicy.GetName()
+		deploymentNameSch := fmt.Sprintf("test-schbkp-%s", strconv.Itoa(rand.Int()))
 		for i := range backupSupportedDataService {
 			log.Infof("Key: %v, Value %v", backupSupportedDataService[i], dataServiceNameDefaultAppConfigMap[backupSupportedDataService[i]])
 			n := rand.Int() % len(pdsNamespaces)
 			namespace := pdsNamespaces[n]
 			namespaceId := namespaceNameIdMap[namespace]
 			for _, backupTgt := range []string{S3BackupTarget, S3CompatibleBackupTarget, BLOBBackuptarget} {
-				log.Infof("Created %v deployment  in the namespace %v with scheduled back up enabled.", backupSupportedDataService[i], namespace)
+				log.Infof("Deployment details: Type: %s , Name : %s , Namesapce: %s , Backup Policy: %s", backupSupportedDataService[i], deploymentNameSch, namespace, backupPolicyName)
 				deployment, _ :=
 					suite.components.DataServiceDeployment.CreateDeploymentWithScehduleBackup(projectId,
 						deploymentTargetId,
@@ -142,10 +147,9 @@ func (suite *PDSTestSuite) TestBackup() {
 						serviceType,
 						dataServiceDefaultResourceTemplateIdMap[backupSupportedDataService[i]],
 						storageTemplateId,
-						backupPolicy.GetId(),
+						backupPolicyId,
 						backupTargetNameIdMap[backupTgt],
 					)
-				deployementIdnameWithSchBkpMap[deployment.GetId()] = deployment.GetName()
 
 				status, _ := suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
 				sleeptime := 0
@@ -155,6 +159,9 @@ func (suite *PDSTestSuite) TestBackup() {
 					status, _ = suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
 					log.Infof("Health status -  %v", status.GetHealth())
 				}
+				if status.GetHealth() == "Healthy" {
+					deployementIdnameWithSchBkpMap[deployment.GetId()] = deployment.GetName()
+				}
 				log.Infof("Deployment details: Health status -  %v,Replicas - %v, Ready replicas - %v", status.GetHealth(), status.GetReplicas(), status.GetReadyReplicas())
 			}
 		}
@@ -162,12 +169,11 @@ func (suite *PDSTestSuite) TestBackup() {
 
 	log.Info("Create dataservice with no scheduled backup enabled.(Adhoc only)")
 	for i := range backupSupportedDataService {
-
 		log.Infof("Key: %v, Value %v", backupSupportedDataService[i], dataServiceNameDefaultAppConfigMap[backupSupportedDataService[i]])
 		n := rand.Int() % len(pdsNamespaces)
 		namespace := pdsNamespaces[n]
 		namespaceId := namespaceNameIdMap[namespace]
-		deploymentNameAdhoc := fmt.Sprintf("agaurav-adhocBkp-%s", strconv.Itoa(rand.Int()))
+		deploymentNameAdhoc := fmt.Sprintf("test-adhocBkp-%s", strconv.Itoa(rand.Int()))
 		log.Infof("Created %v deployment  in the namespace %v with no scheduled back up.", backupSupportedDataService[i], namespace)
 		deployment, _ :=
 			suite.components.DataServiceDeployment.CreateDeployment(projectId,
@@ -182,7 +188,7 @@ func (suite *PDSTestSuite) TestBackup() {
 				dataServiceDefaultResourceTemplateIdMap[backupSupportedDataService[i]],
 				storageTemplateId,
 			)
-		deployementIdnameWithAdhocBkpMap[deployment.GetId()] = deployment.GetName()
+
 		status, _ := suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
 		sleeptime := 0
 		for status.GetHealth() != "Healthy" && sleeptime < duration {
@@ -190,6 +196,9 @@ func (suite *PDSTestSuite) TestBackup() {
 			sleeptime += 10
 			status, _ = suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
 			log.Infof("Health status -  %v", status.GetHealth())
+		}
+		if status.GetHealth() == "Healthy" {
+			deployementIdnameWithAdhocBkpMap[deployment.GetId()] = deployment.GetName()
 		}
 		log.Infof("Deployment details: Health status -  %v,Replicas - %v, Ready replicas - %v", status.GetHealth(), status.GetReplicas(), status.GetReadyReplicas())
 

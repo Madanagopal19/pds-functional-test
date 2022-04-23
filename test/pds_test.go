@@ -67,7 +67,6 @@ var (
 	dataServiceNameDefaultAppConfigMap      = make(map[string]string)
 	deployementIdNameMap                    = make(map[string]string)
 	namespaceNameIdMap                      = make(map[string]string)
-	backuppolicyIdNameMap                   = make(map[string]string)
 	backupTargetNameIdMap                   = make(map[string]string)
 	deployementIdnameWithSchBkpMap          = make(map[string]string)
 	deployementIdnameWithAdhocBkpMap        = make(map[string]string)

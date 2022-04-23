@@ -64,8 +64,8 @@ func (ds *DataServiceDeployment) CreateDeploymentWithScehduleBackup(projectId st
 		Name:                               &name,
 		NamespaceId:                        &namespaceId,
 		NodeCount:                          &nodeCount,
-		ScheduledBackup:                    &scheduledBackup,
 		ResourceSettingsTemplateId:         &resourceTemplateId,
+		ScheduledBackup:                    &scheduledBackup,
 		ServiceType:                        &serviceType,
 		StorageOptionsTemplateId:           &storageTemplateId,
 	}
