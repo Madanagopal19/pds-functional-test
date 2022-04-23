@@ -20,9 +20,9 @@ var (
 
 	log                      = logger.Log
 	accountName              = "Portworx"
-	S3BackupTarget           = "pds-qa-s3-target"
-	S3CompatibleBackupTarget = "pds-qa-s3-compatible-target"
-	BLOBBackuptarget         = "pds-qa-blob-target"
+	S3BackupTarget           = "agaurav-aws-target"
+	S3CompatibleBackupTarget = "agaurav-s3-compatible-target"
+	BLOBBackuptarget         = "agaurav-azure-target"
 	serviceType              = "LoadBalancer"
 	pdsNamespaces            []string
 
@@ -44,19 +44,19 @@ type PDSTestSuite struct {
 }
 
 const (
-	duration  = 900
+	duration  = 600
 	sleepTime = 10
 
 	defaultNumPods = 3
-	dnsZone        = "portworx.pds-dns.io"
+	dnsZone        = "portworx.pds-dns-dev.io"
 
 	// FIX-ME
-	// Create the template manually for all the data serices with below name (i.e QaDefault)
-	storageTemplateName   = "QaDefault"
-	resourceTemplateName  = "QaDefault"
-	appConfigTemplateName = "QaDefault"
+	// Create the template manually for all the data serices with below name (i.e Default)
+	storageTemplateName   = "Default"
+	resourceTemplateName  = "Default"
+	appConfigTemplateName = "Default"
 	deploymentName        = "automation"
-	templateName          = "QaDefault"
+	templateName          = "Default"
 )
 
 var (
@@ -67,6 +67,7 @@ var (
 	dataServiceNameDefaultAppConfigMap      = make(map[string]string)
 	deployementIdNameMap                    = make(map[string]string)
 	namespaceNameIdMap                      = make(map[string]string)
+	backuppolicyIdNameMap                   = make(map[string]string)
 	backupTargetNameIdMap                   = make(map[string]string)
 	deployementIdnameWithSchBkpMap          = make(map[string]string)
 	deployementIdnameWithAdhocBkpMap        = make(map[string]string)
@@ -74,22 +75,6 @@ var (
 
 func (suite *PDSTestSuite) SetupSuite() {
 
-	log.Info(`
-		==========================================================================
-		@owner: PDS-QA team
-		Please go through https://github.com/portworx/pds-functional-test
-		Right now we supported only basic sanity tests.
-		Resources(Creation/deletion) as part of the runs.
-			- PDS Helm chart will be installed to the lastest supported version w.r.t your control plane.
-			- Namespaces - pds-automation-*
-			- PVC / PV 
-		- Prerequsite
-			- Please make sure kubectl and helm are installed.
-			- "Default" Storage option / Resource / Appconfig template should be present.
-			- Create the template manually for all the data serices having name as Default if its not already populated.
-
-		==========================================================================
-	`)
 	// Perform basic setup with sanity checks.
 	log.Info("Check for environmental variable.")
 	suite.env = MustHaveEnvVariables()
@@ -110,9 +95,12 @@ func (suite *PDSTestSuite) SetupSuite() {
 	suite.apiClient = pds.NewAPIClient(apiConf)
 	suite.components = api.NewComponents(suite.ctx, suite.apiClient)
 
-	acc := suite.components.Account
+}
+
+func (s *PDSTestSuite) BeforeTest(suiteName, testName string) {
+	acc := s.components.Account
 	accounts, _ := acc.GetAccountsList()
-	if strings.EqualFold(suite.env.CLUSTER_TYPE, "onprem") {
+	if strings.EqualFold(s.env.CLUSTER_TYPE, "onprem") {
 		serviceType = "ClusterIP"
 	}
 
@@ -123,43 +111,40 @@ func (suite *PDSTestSuite) SetupSuite() {
 		}
 	}
 	log.Infof("Account Detail- Name: %s, UUID: %s ", accountName, accountId)
-	tnts := suite.components.Tenant
+	tnts := s.components.Tenant
 	tenants, _ := tnts.GetTenantsList(accountId)
 	tenantId = tenants[0].GetId()
 	tenantName := tenants[0].GetName()
 	log.Infof("Tenant Details- Name: %s, UUID: %s ", tenantName, tenantId)
-	projcts := suite.components.Project
+	projcts := s.components.Project
 	projects, _ := projcts.GetprojectsList(tenantId)
 	projectId = projects[0].GetId()
 	projectName := projects[0].GetName()
 	log.Infof("Project Details- Name: %s, UUID: %s ", projectName, projectId)
 
 	log.Info("Get helm version")
-	version, _ := suite.components.ApiVersion.GetHelmChartVersion()
+	version, _ := s.components.ApiVersion.GetHelmChartVersion()
 	log.Infof("Helm chart Version : %s ", version)
 
-	clusterId, err := GetClusterId(suite.env.TARGET_KUBECONFIG)
+	clusterId, err := GetClusterId(s.env.TARGET_KUBECONFIG)
 	if err != nil {
 		log.Panicf("Unable to fetch the cluster Id")
 	}
 
-	log.Infof("Register cluster %s to control plane %v ", clusterId, suite.env.CONTROL_PLANE_URL)
-	err = suite.TargetCluster.RegisterToControlPlane(suite.env.CONTROL_PLANE_URL, version, GetBearerToken(true), tenantId)
+	log.Infof("Register cluster %s to control plane %v ", clusterId, s.env.CONTROL_PLANE_URL)
+	err = s.TargetCluster.RegisterToControlPlane(s.env.CONTROL_PLANE_URL, version, GetBearerToken(true), tenantId)
 	if err != nil {
-		log.Panicf("Unable to register the target cluster to control plane %v", suite.env.CONTROL_PLANE_URL)
+		log.Panicf("Unable to register the target cluster to control plane %v", s.env.CONTROL_PLANE_URL)
 	}
 	log.Info("Creating namespaces for data service deployment")
-	pdsNamespaces = []string{"pds-automation-1", "pds-automation-2", "pds-automation-3"}
+	pdsNamespaces = []string{"automation-1", "automation-2", "automation-3"}
 	for _, ns := range pdsNamespaces {
 		log.Infof("Namespace name - %s", ns)
-		suite.TargetCluster.CreatePDSNamespace(ns)
+		s.TargetCluster.CreatePDSNamespace(ns)
 	}
-
 }
 
-func (suite *PDSTestSuite) TearDownSuite() {
-	log.Info("Sleeping for 5 minutes before teardown.")
-	time.Sleep(5 * time.Minute)
+func (suite *PDSTestSuite) AfterTest(suiteName, testName string) {
 	log.Warn("Cleaning all the deployment created as part of this test run")
 	log.Info("Sleep for sometime.")
 	time.Sleep(1 * time.Minute)
@@ -210,21 +195,82 @@ func (suite *PDSTestSuite) TearDownSuite() {
 		suite.components.DataServiceDeployment.DeleteDeployment(id)
 		time.Sleep(25 * time.Second)
 	}
-
-	log.Info("Deleting all the Persistent Volume claims created as part of this test run")
-	for _, ns := range pdsNamespaces {
-		DeleteAllPVC(ns, suite.env.TARGET_KUBECONFIG)
+	if suite.T().Failed() {
+		log.Errorf(fmt.Sprintf("Failed test %s:", testName))
 	}
+}
 
-	log.Info("Deleting all the Released Persistent volume")
-	DeleteAllReleasedPV(suite.env.TARGET_KUBECONFIG)
-
-	log.Info("Deleting all the namesapce created for deployment.")
-	for _, ns := range pdsNamespaces {
-		DeleteNamespace(ns, suite.env.TARGET_KUBECONFIG)
+func (st *PDSTestSuite) getClusterID() (string, error) {
+	clusterId, err := GetClusterId(st.env.TARGET_KUBECONFIG)
+	if err != nil {
+		log.Panicf("Unable to fetch the cluster Id")
 	}
-	suite.TargetCluster.DeRegisterFromControlPlane()
+	return clusterId, err
+}
 
+func (suite *PDSTestSuite) getTargetClusters(clusterId string) string {
+
+	var deploymentTargetComponent = suite.components.DeploymentTarget
+	var deploymentTargetId string
+
+	targetClusters, _ := deploymentTargetComponent.ListDeploymentTargetsBelongsToTenant(tenantId)
+	for i := 0; i < len(targetClusters); i++ {
+		if targetClusters[i].GetClusterId() == clusterId {
+			deploymentTargetId = targetClusters[i].GetId()
+			log.Infof("Cluster ID: %v, Name: %v,Status: %v, deploymentTargetId: %v", targetClusters[i].GetClusterId(), targetClusters[i].GetName(), targetClusters[i].GetStatus(), deploymentTargetId)
+		}
+	}
+	return deploymentTargetId
+}
+
+func (suite *PDSTestSuite) listNamespaces(deploymentTargetId string) []pds.ModelsNamespace {
+	var nsComponent = suite.components.Namespace
+	namespaces, _ := nsComponent.ListNamespaces(deploymentTargetId)
+	return namespaces
+}
+
+func (suite *PDSTestSuite) getStorageTemplateId(tenantId string) string {
+	var (
+		storagetemplateComponent = suite.components.StorageSettingsTemplate
+		storageTemplateId        string
+	)
+	storageTemplates, _ := storagetemplateComponent.ListTemplates(tenantId)
+	for i := 0; i < len(storageTemplates); i++ {
+		if storageTemplates[i].GetName() == storageTemplateName {
+			log.Infof("Storage template details -----> Name %v,Repl %v , Fg %v , Fs %v",
+				storageTemplates[i].GetName(),
+				storageTemplates[i].GetRepl(),
+				storageTemplates[i].GetFg(),
+				storageTemplates[i].GetFs())
+			storageTemplateId = storageTemplates[i].GetId()
+			log.Infof("Storage Id: %v", storageTemplateId)
+		}
+	}
+	return storageTemplateId
+}
+
+func (suite *PDSTestSuite) getResourceTemplate(tenantId string) ([]pds.ModelsResourceSettingsTemplate, map[string]string) {
+	var (
+		resourceTemplateComponent = suite.components.ResourceSettingsTemplate
+		dataServiceComponent      = suite.components.DataService
+	)
+	resourceTemplates, _ := resourceTemplateComponent.ListTemplates(tenantId)
+	for i := 0; i < len(resourceTemplates); i++ {
+		if resourceTemplates[i].GetName() == resourceTemplateName {
+			dataService, _ := dataServiceComponent.GetDataService(resourceTemplates[i].GetDataServiceId())
+			log.Infof("Data service name: %v", dataService.GetName())
+			log.Infof("Resource template details ---> Name %v, Id : %v ,DataServiceId %v , StorageReq %v , Memoryrequest %v",
+				resourceTemplates[i].GetName(),
+				resourceTemplates[i].GetId(),
+				resourceTemplates[i].GetDataServiceId(),
+				resourceTemplates[i].GetStorageRequest(),
+				resourceTemplates[i].GetMemoryRequest())
+			dataServiceDefaultResourceTemplateIdMap[dataService.GetName()] =
+				resourceTemplates[i].GetId()
+			dataServiceNameIdMap[dataService.GetName()] = dataService.GetId()
+		}
+	}
+	return resourceTemplates, dataServiceNameIdMap
 }
 
 func TestPDSTestSuite(t *testing.T) {
