@@ -128,7 +128,7 @@ func (suite *PDSTestSuite) TestDeployDataServices() {
 		status, _ := suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
 		sleeptime := 0
 		for status.GetHealth() != "Healthy" && sleeptime < duration {
-			if sleeptime > 30 && (status.GetHealth() != "Healthy" || status.GetHealth() != "Down" || status.GetHealth() != "Degraded") {
+			if sleeptime > 30 && (status.GetHealth() == "Healthy" || status.GetHealth() == "Down" || status.GetHealth() == "Degraded") {
 				log.Infof("Deployment details: Health status -  %v, procceeding with next deployment", status.GetHealth())
 				break
 			}
