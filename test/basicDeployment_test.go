@@ -124,7 +124,7 @@ func (suite *PDSTestSuite) TestDeployDataServices() {
 				dataServiceDefaultResourceTemplateIdMap[supportedDataServices[i]],
 				storageTemplateId,
 			)
-		
+
 		status, _ := suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
 		sleeptime := 0
 		for status.GetHealth() != "Healthy" && sleeptime < duration {
@@ -134,7 +134,7 @@ func (suite *PDSTestSuite) TestDeployDataServices() {
 			log.Infof("Health status -  %v", status.GetHealth())
 		}
 		if status.GetHealth() == "Healthy" {
-			deployementIdNameMap[deployment.GetId()] = deployment.GetName())
+			deployementIdNameMap[deployment.GetId()] = deployment.GetName()
 		}
 		log.Infof("Deployment details: Health status -  %v,Replicas - %v, Ready replicas - %v", status.GetHealth(), status.GetReplicas(), status.GetReadyReplicas())
 
