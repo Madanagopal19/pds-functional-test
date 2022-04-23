@@ -154,6 +154,10 @@ func (suite *PDSTestSuite) TestBackup() {
 				status, _ := suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
 				sleeptime := 0
 				for status.GetHealth() != "Healthy" && sleeptime < duration {
+					if sleeptime > 30 && (status.GetHealth() != "Healthy" || status.GetHealth() != "Down" || status.GetHealth() != "Degraded") {
+						log.Infof("Deployment details: Health status -  %v, procceeding with next deployment", status.GetHealth())
+						break
+					}
 					time.Sleep(15 * time.Second)
 					sleeptime += 15
 					status, _ = suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
@@ -192,8 +196,12 @@ func (suite *PDSTestSuite) TestBackup() {
 		status, _ := suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
 		sleeptime := 0
 		for status.GetHealth() != "Healthy" && sleeptime < duration {
-			time.Sleep(10 * time.Second)
-			sleeptime += 10
+			if sleeptime > 30 && (status.GetHealth() != "Healthy" || status.GetHealth() != "Down" || status.GetHealth() != "Degraded") {
+				log.Infof("Deployment details: Health status -  %v, procceeding with next deployment", status.GetHealth())
+				break
+			}
+			time.Sleep(15 * time.Second)
+			sleeptime += 15
 			status, _ = suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
 			log.Infof("Health status -  %v", status.GetHealth())
 		}
