@@ -38,6 +38,13 @@
     
     export CLUSTER_TYPE=<onprem or aks or eks>
 
+    export DATA_SERVICE="<Kafka>"
+
+    export ZOOKEEPER_CONNECTION_STRING="<Valid ZK Connection string>"
+
+    export ZOOKEEPER_PASSWORD="<Valid ZK password of the connection string>"
+
+
 #### Test execution (ToDo:   Run using container/pod)
     go test ./test  -timeout 9999999s -v
 

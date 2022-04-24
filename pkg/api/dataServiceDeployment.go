@@ -25,6 +25,32 @@ func (ds *DataServiceDeployment) ListDeployments(projectId string) ([]pds.Models
 	return dsModels.GetData(), err
 }
 
+func (ds *DataServiceDeployment) CreateKafkaDeployment(application_configuration_overrides map[string]string, projectId string, deploymentTargetId string, dnsZone string, name string, namespaceId string, appConfigId string, imageId string, nodeCount int32, serviceType string, resourceTemplateId string, storageTemplateId string) (*pds.ModelsDeployment, error) {
+	dsClient := ds.apiClient.DeploymentsApi
+	createRequest := pds.ControllersCreateProjectDeployment{
+		ApplicationConfigurationOverrides:  &application_configuration_overrides,
+		ApplicationConfigurationTemplateId: &appConfigId,
+		DeploymentTargetId:                 &deploymentTargetId,
+		DnsZone:                            &dnsZone,
+		ImageId:                            &imageId,
+		// LoadBalancerSourceRanges: lbSourceRange,
+		Name:        &name,
+		NamespaceId: &namespaceId,
+		NodeCount:   &nodeCount,
+		// ScheduledBackup:                    &scheduledBackup,
+		ResourceSettingsTemplateId: &resourceTemplateId,
+		ServiceType:                &serviceType,
+		StorageOptionsTemplateId:   &storageTemplateId,
+	}
+	dsModel, res, err := dsClient.ApiProjectsIdDeploymentsPost(ds.context, projectId).Body(createRequest).Execute()
+
+	if res.StatusCode != status.StatusOK {
+		log.Errorf("Error when calling `ApiProjectsIdDeploymentsPost``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
+	}
+	return dsModel, err
+}
+
 func (ds *DataServiceDeployment) CreateDeployment(projectId string, deploymentTargetId string, dnsZone string, name string, namespaceId string, appConfigId string, imageId string, nodeCount int32, serviceType string, resourceTemplateId string, storageTemplateId string) (*pds.ModelsDeployment, error) {
 	dsClient := ds.apiClient.DeploymentsApi
 	createRequest := pds.ControllersCreateProjectDeployment{

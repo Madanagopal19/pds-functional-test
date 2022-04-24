@@ -249,7 +249,7 @@ func (suite *PDSTestSuite) getStorageTemplateId(tenantId string) string {
 	return storageTemplateId
 }
 
-func (suite *PDSTestSuite) getResourceTemplate(tenantId string) ([]pds.ModelsResourceSettingsTemplate, map[string]string) {
+func (suite *PDSTestSuite) getResourceTemplate(tenantId string) ([]pds.ModelsResourceSettingsTemplate, map[string]string, map[string]string) {
 	var (
 		resourceTemplateComponent = suite.components.ResourceSettingsTemplate
 		dataServiceComponent      = suite.components.DataService
@@ -270,7 +270,17 @@ func (suite *PDSTestSuite) getResourceTemplate(tenantId string) ([]pds.ModelsRes
 			dataServiceNameIdMap[dataService.GetName()] = dataService.GetId()
 		}
 	}
-	return resourceTemplates, dataServiceNameIdMap
+	return resourceTemplates, dataServiceNameIdMap, dataServiceDefaultResourceTemplateIdMap
+}
+
+func (suite *PDSTestSuite) getAppConfigTemplate(tenantId string) []pds.ModelsApplicationConfigurationTemplate {
+	log.Infof("Get the Application configuration template")
+	appConfig := suite.components.AppConfigTemplate
+	appConfigs, err := appConfig.ListTemplates(tenantId)
+	if err != nil {
+		log.Panicf("Unable to fetch the appconfig templates")
+	}
+	return appConfigs
 }
 
 func TestPDSTestSuite(t *testing.T) {

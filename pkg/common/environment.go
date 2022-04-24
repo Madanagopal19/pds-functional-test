@@ -12,27 +12,33 @@ import (
 )
 
 const (
-	envControlPlaneURL   = "CONTROL_PLANE_URL"
-	envTargetKubeconfig  = "TARGET_KUBECONFIG"
-	envVaultHost         = "VAULT_HOST"
-	envVaultToken        = "VAULT_TOKEN"
-	envPDSUserCredential = "PDS_USER_CREDENTIAL"
-	envPDSSecretKey      = "PDS_SECRET_KEY"
-	chartPath            = "/pds-charts"
-	releaseName          = "myrelease"
-	pdsSystemNamespace   = "pds-system"
-	envClusterType       = "CLUSTER_TYPE"
+	envControlPlaneURL    = "CONTROL_PLANE_URL"
+	envTargetKubeconfig   = "TARGET_KUBECONFIG"
+	envVaultHost          = "VAULT_HOST"
+	envVaultToken         = "VAULT_TOKEN"
+	envPDSUserCredential  = "PDS_USER_CREDENTIAL"
+	envPDSSecretKey       = "PDS_SECRET_KEY"
+	chartPath             = "/pds-charts"
+	releaseName           = "myrelease"
+	pdsSystemNamespace    = "pds-system"
+	envClusterType        = "CLUSTER_TYPE"
+	envDataService        = "DATA_SERVICE"
+	envZkConnectionString = "ZOOKEEPER_CONNECTION_STRING"
+	envZkPassword         = "ZOOKEEPER_PASSWORD"
 )
 
 // Environment lhasha
 type Environment struct {
-	CONTROL_PLANE_URL   string
-	TARGET_KUBECONFIG   string
-	VAULT_HOST          string
-	VAULT_TOKEN         string
-	PDS_USER_CREDENTIAL string
-	PDS_SECRET_KEY      string
-	CLUSTER_TYPE        string
+	CONTROL_PLANE_URL           string
+	TARGET_KUBECONFIG           string
+	VAULT_HOST                  string
+	VAULT_TOKEN                 string
+	PDS_USER_CREDENTIAL         string
+	PDS_SECRET_KEY              string
+	CLUSTER_TYPE                string
+	DATA_SERVICE                string
+	ZOOKEEPER_CONNECTION_STRING string
+	ZOOKEEPER_PASSWORD          string
 }
 
 type BearerToken struct {
@@ -47,13 +53,16 @@ var log = logger.Log
 // MustHaveEnvVariables ljsas
 func MustHaveEnvVariables() Environment {
 	return Environment{
-		CONTROL_PLANE_URL:   mustGetEnvVariable(envControlPlaneURL),
-		TARGET_KUBECONFIG:   mustGetEnvVariable(envTargetKubeconfig),
-		VAULT_HOST:          mustGetEnvVariable(envVaultHost),
-		VAULT_TOKEN:         mustGetEnvVariable(envVaultToken),
-		PDS_USER_CREDENTIAL: mustGetEnvVariable(envPDSUserCredential),
-		PDS_SECRET_KEY:      mustGetEnvVariable(envPDSSecretKey),
-		CLUSTER_TYPE:        mustGetEnvVariable(envClusterType),
+		CONTROL_PLANE_URL:           mustGetEnvVariable(envControlPlaneURL),
+		TARGET_KUBECONFIG:           mustGetEnvVariable(envTargetKubeconfig),
+		VAULT_HOST:                  mustGetEnvVariable(envVaultHost),
+		VAULT_TOKEN:                 mustGetEnvVariable(envVaultToken),
+		PDS_USER_CREDENTIAL:         mustGetEnvVariable(envPDSUserCredential),
+		PDS_SECRET_KEY:              mustGetEnvVariable(envPDSSecretKey),
+		CLUSTER_TYPE:                mustGetEnvVariable(envClusterType),
+		DATA_SERVICE:                mustGetEnvVariable(envDataService),
+		ZOOKEEPER_CONNECTION_STRING: mustGetEnvVariable(envZkConnectionString),
+		ZOOKEEPER_PASSWORD:          mustGetEnvVariable(envZkPassword),
 	}
 }
 
