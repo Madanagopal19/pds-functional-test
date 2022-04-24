@@ -74,6 +74,21 @@ var (
 )
 
 func (suite *PDSTestSuite) SetupSuite() {
+	log.Info(`
+	==========================================================================
+	@owner: PDS-QA team
+	Please go through https://github.com/portworx/pds-functional-test
+	Right now we supported only basic sanity tests.
+	Resources(Creation/deletion) as part of the runs.
+		- PDS Helm chart will be installed to the lastest supported version w.r.t your control plane.
+		- Namespaces - pds-automation-*
+		- PVC / PV 
+	- Prerequsite
+		- Please make sure kubectl and helm are installed.
+		- "Default" Storage option / Resource / Appconfig template should be present.
+		- Create the template manually for all the data serices having name as Default if its not already populated.
+	==========================================================================
+`)
 
 	// Perform basic setup with sanity checks.
 	log.Info("Check for environmental variable.")
