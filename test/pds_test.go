@@ -69,6 +69,7 @@ var (
 	namespaceNameIdMap                      = make(map[string]string)
 	deployementIdnameWithSchBkpMap          = make(map[string]string)
 	deployementIdnameWithAdhocBkpMap        = make(map[string]string)
+	storageTemplateID                       string
 )
 
 func (suite *PDSTestSuite) SetupSuite() {
@@ -102,7 +103,7 @@ func (suite *PDSTestSuite) SetupSuite() {
 	apiConf.Scheme = endpointUrl.Scheme
 
 	// Use Configuration or context with WithValue (above)
-	suite.ctx = context.WithValue(context.Background(), pds.ContextAPIKeys, map[string]pds.APIKey{"ApiKeyAuth": {Key: GetBearerToken(true), Prefix: "Bearer"}})
+	suite.ctx = context.WithValue(context.Background(), pds.ContextAPIKeys, map[string]pds.APIKey{"ApiKeyAuth": {Key: "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6IjgwZTcxMDU5MmQ1NmI3MDA0Mjg2ODEyNTYyYjI2M2VlMWQzMzM1YWNkYTkyNmRkZWE2M2U5MGEyYjE1ZGQ3MjdhYTMzNTU4NzMyZmViMzNiIn0.eyJhdWQiOiIzIiwianRpIjoiODBlNzEwNTkyZDU2YjcwMDQyODY4MTI1NjJiMjYzZWUxZDMzMzVhY2RhOTI2ZGRlYTYzZTkwYTJiMTVkZDcyN2FhMzM1NTg3MzJmZWIzM2IiLCJpYXQiOjE2NTE0NjI4ODMsIm5iZiI6MTY1MTQ2Mjg4MywiZXhwIjoxNjUxNTQ5MjgzLCJzdWIiOiIyMTk5NiIsImlzcyI6Imh0dHBzOlwvXC9hcGljZW50cmFsLnBvcnR3b3J4LmNvbVwvYXBpIiwibmFtZSI6Ik1hZGFuYWdvcGFsIEFydW5hY2hhbGFtIiwiZW1haWwiOiJtYXJ1bmFjaGFsYW1AcHVyZXN0b3JhZ2UuY29tIiwic2NvcGVzIjpbXSwicm9sZXMiOlsicHgtYmFja3VwLWluZnJhLmFkbWluIl19.IcrrTJeuT3JEGcg7h0nh5HTRLiRORyd92K0G48bEZLRbB0c2FHYsUxRHbS4o7Y4YqJFrx1kjpk-eS6FQv5pgZXu-eLbtVmc-vEBjApwULxrnn2-TlnyzzjBqSPyDURSGpVLyeoa5l_w7DPjZqDW6Z8H-EfVRLgobBYO-j5Vt9bw9vPsqIbWrB6zr_yEmx8JwgU3iZasQG0sQvAxw8owivzwUK3l5I-_WaLeB_b8Sl5t-p0NbqDu08grUoTwKAjl6lTyMcpq80NFYTLEJzpaDkkukHB3swwGEYYlUojUJARifESaKxHXZwm3eQhn7HmcIQmCXVlwzsxmr6JTaNJ1nXjVbthBUwWtOAiYD-oZharzaYyRFwqHwXytfVA-onKcuAKL0xo7DZy5MY0hzvieIm35DmXZ3ApiEH3_N0AGfz0tjW7KU1m1AJ1XN0JhAa8BciDINvfvLIpmwCWMWnANKVwltcE9JzHnz4lH5whgTy1XjVa7KqiRhMkQsH35inf_fkm5uxcH5WpbuuBDubCp_5B7wEmsptr5GuYJU9JbghAuaNTHfuJQdg4A1hDYkvNhotbxCHpIOflfiYVJqJuvyeleTVti4utP2maCRDyikFQdiaRsaOd7O3caw2m_7CsXyxZ8qrkgfxKc94E_uq3ijvAccvKPsIb_D8Xu40nZx43k"}})
 	suite.apiClient = pds.NewAPIClient(apiConf)
 	suite.components = api.NewComponents(suite.ctx, suite.apiClient)
 
@@ -157,6 +158,14 @@ func (suite *PDSTestSuite) SetupSuite() {
 		suite.TargetCluster.CreatePDSNamespace(ns)
 	}
 
+	log.Infof("Creating Storage Template")
+	suite.ControlPlane = NewControlPlane(suite.env.CONTROL_PLANE_URL, suite.components)
+	template, err := suite.ControlPlane.CreateStorageOptionTemplate(tenantId, false, "ext4", storageTemplateName, 2, false)
+	storageTemplateID = *template.Id
+	log.Infof("storage template id %s", storageTemplateID)
+	if err != nil {
+		log.Panicf("Storage template creation failed with error - %v", err)
+	}
 }
 
 func (suite *PDSTestSuite) TearDownSuite() {
@@ -170,6 +179,10 @@ func (suite *PDSTestSuite) TearDownSuite() {
 		suite.components.DataServiceDeployment.DeleteDeployment(id)
 		time.Sleep(sleepTime)
 	}
+
+	log.Infof("Deleting the storage template")
+	suite.components.StorageSettingsTemplate.DeleteTemplate(storageTemplateID)
+
 	log.Info("Sleep for a minute.")
 	time.Sleep(1 * time.Minute)
 	for id := range deployementIdnameWithSchBkpMap {

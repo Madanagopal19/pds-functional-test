@@ -1,6 +1,7 @@
 package common
 
 import (
+	pds "github.com/portworx/pds-api-go-client/pds/v1alpha1"
 	api "github.com/portworx/pds-functional-test/pkg/api"
 )
 
@@ -25,24 +26,14 @@ func (cp *ControlPlane) GetRegistrationToken(tenantId string) string {
 	return token.GetToken()
 }
 
-func (cp *ControlPlane) CreateStorageOptionTemplate(tenantId string, name string) error {
+func (cp *ControlPlane) CreateStorageOptionTemplate(tenantId string, fg bool, fs string, name string, repl int32, secure bool) (*pds.ModelsStorageOptionsTemplate, error) {
 	log.Info("Creating storage option template.")
 	st := cp.components.StorageSettingsTemplate
-	templates, _ := st.ListTemplates(tenantId)
-	isExists := false
-	for _, template := range templates {
-		if template.GetName() == name {
-			isExists = true
-		}
+	template, err := st.CreateTemplate(tenantId, fg, fs, name, repl, secure)
+	if err != nil {
+		log.Errorf("Storage template creation failed with error - %v", err)
 	}
-	if !isExists {
-		_, err := st.CreateTemplate(tenantId, false, "ext4", name, 2, false)
-		if err != nil {
-			log.Errorf("Storage template creation failed with error - %v", err)
-			return err
-		}
-	}
-	return nil
+	return template, nil
 
 }
 func (cp *ControlPlane) CreateResourceSettingTemplate(tenantId string, name string, dataServiceName string) error {
