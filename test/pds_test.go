@@ -26,15 +26,15 @@ var (
 	serviceType              = "LoadBalancer"
 	pdsNamespaces            []string
 
-	supportedDataServices = map[string]string{"cas": "Cassandra", "zk": "Zookeeper", "rmq": "Rabbitmq", "pg": "Postgresql"}
+	supportedDataServices = map[string]string{"cas": "Cassandra", "zk": "ZooKeeper", "kf": "Kafka", "rmq": "RabbitMQ", "pg": "PostgreSQL"}
 
-	// supportedDataServices = map[string]string{"cas": "Cassandra", "zk": "Zookeeper", "kf": "Kafka", "rmq": "Rabbitmq", "pg": "Postgresql"}
-	backupSupportedDataService = map[string]string{"cas": "Cassandra", "pg": "Postgresql"}
+	backupSupportedDataService = map[string]string{"cas": "Cassandra", "pg": "PostgreSQL"}
 	//futureSupportedDataService = map[string]string{"mdb": "Mongodb", "red": "Redis", "con": "Consul", "cbs": "Couchbase", "dse": "DatastaxEnterprise", "ess": "Elasticsearch"}
 )
 
 type PDSTestSuite struct {
 	suite.Suite
+	ControlPlane    *ControlPlane
 	TargetCluster   *TargetCluster
 	TestEnvironment *Environment
 	ctx             context.Context
@@ -63,11 +63,10 @@ var (
 	dataServiceDefaultResourceTemplateIdMap = make(map[string]string)
 	dataServiceNameIdMap                    = make(map[string]string)
 	dataServiceNameVersionMap               = make(map[string][]string)
-	dataServiceNameImagesMap                = make(map[string]string)
+	dataServiceIdImagesMap                  = make(map[string]string)
 	dataServiceNameDefaultAppConfigMap      = make(map[string]string)
 	deployementIdNameMap                    = make(map[string]string)
 	namespaceNameIdMap                      = make(map[string]string)
-	backupTargetNameIdMap                   = make(map[string]string)
 	deployementIdnameWithSchBkpMap          = make(map[string]string)
 	deployementIdnameWithAdhocBkpMap        = make(map[string]string)
 )
@@ -85,17 +84,14 @@ func (suite *PDSTestSuite) SetupSuite() {
 			- PVC / PV 
 		- Prerequsite
 			- Please make sure kubectl and helm are installed.
-			- "Default" Storage option / Resource / Appconfig template should be present.
-			- Create the template manually for all the data serices having name as Default if its not already populated.
+			- "QaDefault" Storage option / Resource / Appconfig template should be present.
+			- Create the template manually for all the data serices having name as QaDefault if its not already populated.
 
 		==========================================================================
 	`)
 	// Perform basic setup with sanity checks.
 	log.Info("Check for environmental variable.")
 	suite.env = MustHaveEnvVariables()
-
-	log.Info("Get target cluster.")
-	suite.TargetCluster = NewTargetCluster(suite.env.TARGET_KUBECONFIG)
 
 	endpointUrl, err := url.Parse(suite.env.CONTROL_PLANE_URL)
 	if err != nil {
@@ -109,6 +105,12 @@ func (suite *PDSTestSuite) SetupSuite() {
 	suite.ctx = context.WithValue(context.Background(), pds.ContextAPIKeys, map[string]pds.APIKey{"ApiKeyAuth": {Key: GetBearerToken(true), Prefix: "Bearer"}})
 	suite.apiClient = pds.NewAPIClient(apiConf)
 	suite.components = api.NewComponents(suite.ctx, suite.apiClient)
+
+	log.Info("Get control plane cluster.")
+	suite.ControlPlane = NewControlPlane(suite.env.CONTROL_PLANE_URL, suite.components)
+
+	log.Info("Get target cluster.")
+	suite.TargetCluster = NewTargetCluster(suite.env.TARGET_KUBECONFIG)
 
 	acc := suite.components.Account
 	accounts, _ := acc.GetAccountsList()
@@ -144,7 +146,7 @@ func (suite *PDSTestSuite) SetupSuite() {
 	}
 
 	log.Infof("Register cluster %s to control plane %v ", clusterId, suite.env.CONTROL_PLANE_URL)
-	err = suite.TargetCluster.RegisterToControlPlane(suite.env.CONTROL_PLANE_URL, version, GetBearerToken(true), tenantId)
+	err = suite.TargetCluster.RegisterToControlPlane(suite.env.CONTROL_PLANE_URL, version, suite.ControlPlane.GetRegistrationToken(tenantId), tenantId)
 	if err != nil {
 		log.Panicf("Unable to register the target cluster to control plane %v", suite.env.CONTROL_PLANE_URL)
 	}

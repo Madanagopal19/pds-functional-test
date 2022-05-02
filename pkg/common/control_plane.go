@@ -4,10 +4,25 @@ import (
 	api "github.com/portworx/pds-functional-test/pkg/api"
 )
 
-// ControlPlabe khash
+// ControlPlane PDS
 type ControlPlane struct {
 	controlPlaneUrl string
 	components      *api.Components
+}
+
+func (cp *ControlPlane) GetRegistrationToken(tenantId string) string {
+	log.Info("Fetch the registration token.")
+
+	saClient := cp.components.ServiceAccount
+	serviceAccounts, _ := saClient.ListServiceAccounts(tenantId)
+	var agentWriterId string
+	for _, sa := range serviceAccounts {
+		if sa.GetName() == "Default-AgentWriter" {
+			agentWriterId = sa.GetId()
+		}
+	}
+	token, _ := saClient.GetServiceAccountToken(agentWriterId)
+	return token.GetToken()
 }
 
 func (cp *ControlPlane) CreateStorageOptionTemplate(tenantId string, name string) error {
@@ -61,8 +76,9 @@ func (cp *ControlPlane) CreateResourceSettingTemplate(tenantId string, name stri
 }
 
 // NewTargetCluster lsajajsklj
-func NewControlPlane(context string) *ControlPlane {
+func NewControlPlane(url string, components *api.Components) *ControlPlane {
 	return &ControlPlane{
-		controlPlaneUrl: context,
+		controlPlaneUrl: url,
+		components:      components,
 	}
 }

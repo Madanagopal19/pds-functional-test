@@ -90,7 +90,6 @@ func GetNamespace(name string, pathToKubeconfig string) (*v1.Namespace, error) {
 	}
 	return namespace, err
 }
-
 func IsNamespaceExist(name string, pathToKubeconfig string) bool {
 	config, err := clientcmd.BuildConfigFromFlags("", pathToKubeconfig)
 	if err != nil {

@@ -69,6 +69,7 @@ func (suite *PDSTestSuite) TestDeployDataServices() {
 				resourceTemplates[i].GetDataServiceId(),
 				resourceTemplates[i].GetStorageRequest(),
 				resourceTemplates[i].GetMemoryRequest())
+
 			dataServiceDefaultResourceTemplateIdMap[dataService.GetName()] =
 				resourceTemplates[i].GetId()
 			dataServiceNameIdMap[dataService.GetName()] = dataService.GetId()
@@ -87,7 +88,7 @@ func (suite *PDSTestSuite) TestDeployDataServices() {
 	for key := range dataServiceNameVersionMap {
 		images, _ := imageComponent.ListImages(dataServiceNameVersionMap[key][0])
 		for i := 0; i < len(images); i++ {
-			dataServiceNameImagesMap[key] = images[i].GetId()
+			dataServiceIdImagesMap[images[i].GetDataServiceId()] = images[i].GetId()
 		}
 	}
 
@@ -104,13 +105,36 @@ func (suite *PDSTestSuite) TestDeployDataServices() {
 
 	}
 
+	for key := range dataServiceNameIdMap {
+		log.Warnf("DS name- %v,id- %v", key, dataServiceNameIdMap[key])
+	}
+
+	for key := range dataServiceDefaultResourceTemplateIdMap {
+		log.Warnf("DS Res template name- %v,id- %v", key, dataServiceDefaultResourceTemplateIdMap[key])
+	}
+	for key := range dataServiceIdImagesMap {
+		log.Warnf("DS Image name- %v,id- %v", key, dataServiceIdImagesMap[key])
+	}
+
+	for key := range namespaceNameIdMap {
+		log.Warnf("namespace name- %v,id- %v", key, namespaceNameIdMap[key])
+	}
 	log.Info("Create dataservices without backup.")
 	for i := range supportedDataServices {
 		log.Infof("Key: %v, Value %v", supportedDataServices[i], dataServiceNameDefaultAppConfigMap[supportedDataServices[i]])
 		n := rand.Int() % len(pdsNamespaces)
 		namespace := pdsNamespaces[n]
 		namespaceId := namespaceNameIdMap[namespace]
-		log.Infof("Created %v deployment  in the namespace %v with no scheduled back up.", supportedDataServices[i], namespace)
+		log.Infof("Created %v deployment  in the namespace %v", supportedDataServices[i], namespace)
+		log.Infof(`Request params: 
+			projectId- %v deploymentTargetId - %v, 
+			dnsZone - %v,deploymentName-%v,namespaceId - %v
+			App config ID - %v, ImageId - %v
+			num pods- 3, service-type - %v
+			Resource template id - %v, storageTemplateId-%v`,
+			projectId, deploymentTargetId, dnsZone, deploymentName, namespaceId, dataServiceNameDefaultAppConfigMap[supportedDataServices[i]],
+			dataServiceIdImagesMap[dataServiceNameIdMap[supportedDataServices[i]]], serviceType, dataServiceDefaultResourceTemplateIdMap[supportedDataServices[i]], storageTemplateId)
+
 		deployment, _ :=
 			suite.components.DataServiceDeployment.CreateDeployment(projectId,
 				deploymentTargetId,
@@ -118,7 +142,7 @@ func (suite *PDSTestSuite) TestDeployDataServices() {
 				deploymentName,
 				namespaceId,
 				dataServiceNameDefaultAppConfigMap[supportedDataServices[i]],
-				dataServiceNameImagesMap[supportedDataServices[i]],
+				dataServiceIdImagesMap[dataServiceNameIdMap[supportedDataServices[i]]],
 				3,
 				serviceType,
 				dataServiceDefaultResourceTemplateIdMap[supportedDataServices[i]],
@@ -128,7 +152,7 @@ func (suite *PDSTestSuite) TestDeployDataServices() {
 		status, _ := suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())
 		sleeptime := 0
 		for status.GetHealth() != "Healthy" && sleeptime < duration {
-			if sleeptime > 30 && (status.GetHealth() == "Healthy" || status.GetHealth() == "Down" || status.GetHealth() == "Degraded") {
+			if sleeptime > 30 && len(status.GetHealth()) < 2 {
 				log.Infof("Deployment details: Health status -  %v, procceeding with next deployment", status.GetHealth())
 				break
 			}

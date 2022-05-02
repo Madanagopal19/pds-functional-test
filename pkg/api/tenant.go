@@ -14,7 +14,7 @@ type Tenant struct {
 
 func (tenant *Tenant) GetTenantsList(accountId string) ([]pds.ModelsTenant, error) {
 	tenantClient := tenant.apiClient.TenantsApi
-	log.Info("Get list of Accounts.")
+	log.Info("Get list of tenants.")
 	tenantsModel, res, err := tenantClient.ApiAccountsIdTenantsGet(tenant.context, accountId).Execute()
 
 	if err != nil && res.StatusCode != status.StatusOK {
@@ -27,7 +27,7 @@ func (tenant *Tenant) GetTenantsList(accountId string) ([]pds.ModelsTenant, erro
 
 func (tenant *Tenant) GetTenant(tenantId string) (*pds.ModelsTenant, error) {
 	tenantClient := tenant.apiClient.TenantsApi
-	log.Info("Get list of Accounts.")
+	log.Info("Get tenant.")
 	tenantModel, res, err := tenantClient.ApiTenantsIdGet(tenant.context, tenantId).Execute()
 
 	if err != nil && res.StatusCode != status.StatusOK {

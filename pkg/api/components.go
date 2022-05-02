@@ -31,6 +31,7 @@ type Components struct {
 	BackupTarget             *BackupTarget
 	BackupPolicy             *BackupPolicy
 	ApiVersion               *ApiVersion
+	ServiceAccount           *ServiceAccount
 }
 
 /*
@@ -115,6 +116,10 @@ func NewComponents(ctx context.Context, apiClient *pds.APIClient) *Components {
 			apiClient: apiClient,
 		},
 		ApiVersion: &ApiVersion{
+			context:   ctx,
+			apiClient: apiClient,
+		},
+		ServiceAccount: &ServiceAccount{
 			context:   ctx,
 			apiClient: apiClient,
 		},

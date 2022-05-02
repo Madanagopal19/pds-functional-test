@@ -27,7 +27,7 @@ func (targetCluster *TargetCluster) RegisterToControlPlane(controlPlaneUrl strin
 		log.Infof("%s namespace already exists.", pdsSystemNamespace)
 		pods := ListPods(pdsSystemNamespace, targetCluster.kubeconfig)
 		if len(pods) > 0 {
-			log.Warnf("Target cluster is already registered to control plane, but helm chart is not updated.")
+			log.Warn("Target cluster is already registered to control plane.")
 			if !targetCluster.isLatestHelm() {
 				log.Infof("Upgrading PDS helm chart to %v", helmChartversion)
 				cmd = fmt.Sprintf("helm upgrade --create-namespace --namespace=%s pds pds-target --repo=https://portworx.github.io/pds-charts --version=%v --set tenantId=%s "+
