@@ -10,15 +10,15 @@ import (
 func (suite *PDSTestSuite) TestDeployDataServices() {
 
 	var (
-		deploymentTargetId        string
-		deploymentTargetComponent = suite.components.DeploymentTarget
-		nsComponent               = suite.components.Namespace
-		//storagetemplateComponent  = suite.components.StorageSettingsTemplate
-		resourceTemplateComponent = suite.components.ResourceSettingsTemplate
-		dataServiceComponent      = suite.components.DataService
-		versionComponent          = suite.components.Version
-		imageComponent            = suite.components.Image
-		appConfigComponent        = suite.components.AppConfigTemplate
+		deploymentTargetId, storageTemplateId string
+		deploymentTargetComponent             = suite.components.DeploymentTarget
+		nsComponent                           = suite.components.Namespace
+		storagetemplateComponent              = suite.components.StorageSettingsTemplate
+		resourceTemplateComponent             = suite.components.ResourceSettingsTemplate
+		dataServiceComponent                  = suite.components.DataService
+		versionComponent                      = suite.components.Version
+		imageComponent                        = suite.components.Image
+		appConfigComponent                    = suite.components.AppConfigTemplate
 	)
 
 	clusterId, err := GetClusterId(suite.env.TARGET_KUBECONFIG)
@@ -41,6 +41,19 @@ func (suite *PDSTestSuite) TestDeployDataServices() {
 		if namespaces[i].GetStatus() == "available" {
 			namespaceNameIdMap[namespaces[i].GetName()] = namespaces[i].GetId()
 			log.Infof("Available namespace - Name: %v , Id: %v , Status: %v", namespaces[i].GetName(), namespaces[i].GetId(), namespaces[i].GetStatus())
+		}
+	}
+	log.Infof("Get the storage template")
+	storageTemplates, _ := storagetemplateComponent.ListTemplates(tenantId)
+	for i := 0; i < len(storageTemplates); i++ {
+		if storageTemplates[i].GetName() == storageTemplateName {
+			log.Infof("Storage template details -----> Name %v,Repl %v , Fg %v , Fs %v",
+				storageTemplates[i].GetName(),
+				storageTemplates[i].GetRepl(),
+				storageTemplates[i].GetFg(),
+				storageTemplates[i].GetFs())
+			storageTemplateId = storageTemplates[i].GetId()
+			log.Infof("Storage Id: %v", storageTemplateId)
 		}
 	}
 
@@ -120,7 +133,7 @@ func (suite *PDSTestSuite) TestDeployDataServices() {
 			num pods- 3, service-type - %v
 			Resource template id - %v, storageTemplateId-%v`,
 			projectId, deploymentTargetId, dnsZone, deploymentName, namespaceId, dataServiceNameDefaultAppConfigMap[supportedDataServices[i]],
-			dataServiceIdImagesMap[dataServiceNameIdMap[supportedDataServices[i]]], serviceType, dataServiceDefaultResourceTemplateIdMap[supportedDataServices[i]], storageTemplateID)
+			dataServiceIdImagesMap[dataServiceNameIdMap[supportedDataServices[i]]], serviceType, dataServiceDefaultResourceTemplateIdMap[supportedDataServices[i]], storageTemplateId)
 
 		deployment, _ :=
 			suite.components.DataServiceDeployment.CreateDeployment(projectId,
@@ -133,7 +146,7 @@ func (suite *PDSTestSuite) TestDeployDataServices() {
 				3,
 				serviceType,
 				dataServiceDefaultResourceTemplateIdMap[supportedDataServices[i]],
-				storageTemplateID,
+				storageTemplateId,
 			)
 
 		status, _ := suite.components.DataServiceDeployment.GetDeploymentSatus(deployment.GetId())

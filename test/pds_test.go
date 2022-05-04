@@ -69,7 +69,6 @@ var (
 	namespaceNameIdMap                      = make(map[string]string)
 	deployementIdnameWithSchBkpMap          = make(map[string]string)
 	deployementIdnameWithAdhocBkpMap        = make(map[string]string)
-	storageTemplateID                       string
 )
 
 func (suite *PDSTestSuite) SetupSuite() {
@@ -157,6 +156,7 @@ func (suite *PDSTestSuite) SetupSuite() {
 		log.Infof("Namespace name - %s", ns)
 		suite.TargetCluster.CreatePDSNamespace(ns)
 	}
+
 }
 
 func (suite *PDSTestSuite) TearDownSuite() {
@@ -170,7 +170,6 @@ func (suite *PDSTestSuite) TearDownSuite() {
 		suite.components.DataServiceDeployment.DeleteDeployment(id)
 		time.Sleep(sleepTime)
 	}
-
 	log.Info("Sleep for a minute.")
 	time.Sleep(1 * time.Minute)
 	for id := range deployementIdnameWithSchBkpMap {
