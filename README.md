@@ -1,4 +1,4 @@
-# PDS Functional test
+# PDS Functional test(In progress)
    This repository contains Portworx Data Service(PDS) automation script for data service CRUD and backtup operation.
 
 # Overview
@@ -32,9 +32,9 @@
 
     export TARGET_KUBECONFIG=<Path to target cluster kubeconfig>
     
-    export PDS_SECRET_KEY=<Path to PDS secret KEY>
+    export PDS_SECRET_KEY=<Path to PDS secret KEY in vault>
 
-    export PDS_USER_CREDENTIAL=<Path to PDS Users credentials>
+    export PDS_USER_CREDENTIAL=<Path to PDS Users credentials in vault>
 
     export VAULT_HOST=<Vault URL>
     
