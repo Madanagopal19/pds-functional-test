@@ -10,6 +10,10 @@
 
 ## Prerequisites
 
+#### Templates (To be created using Control plane UI) [ToDo-  Remove the hardcoded template requirement.]
+      Create the `Storage Option template` and `resource, appconfig` template manually for all the data services 
+      strictly having name as QaDefault in order to run the test.
+
 #### Install helm
   ```
   curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
