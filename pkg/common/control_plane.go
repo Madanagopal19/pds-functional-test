@@ -3,6 +3,7 @@ package common
 import (
 	pds "github.com/portworx/pds-api-go-client/pds/v1alpha1"
 	api "github.com/portworx/pds-functional-test/pkg/api"
+	"github.com/portworx/pds-functional-test/pkg/common/template"
 )
 
 // ControlPlane PDS
@@ -45,32 +46,109 @@ func (cp *ControlPlane) CreateDeafaultStorageTemplate(tenantId string, name stri
 	return template, err
 }
 
-func (cp *ControlPlane) CreateResourceSettingTemplate(tenantId string, name string, dataServiceName string) error {
+func (cp *ControlPlane) CreateDefaultResourceSettingTemplate(tenantId string, name string, dataServiceName string) error {
 	log.Info("Creating Resource setting template %s for the data service %s.", name, dataServiceName)
-	dsComp := cp.components.DataService
-	dataServices, _ := dsComp.ListDataServices()
-	var dataServiceId string
-	for _, ds := range dataServices {
-		if ds.GetName() == dataServiceName {
-			dataServiceId = ds.GetId()
-		}
+	temp := template.CreateTemplates(cp.controlPlaneUrl, cp.components)
 
+	_, err := temp.CreateResourceSettingTemplate(tenantId, "2", "1", dataServiceName, "4G", "2G", name, "10G")
+	if err != nil {
+		log.Errorf("Storage template creation failed with error - %v", err)
+		return err
 	}
-	rtComp := cp.components.ResourceSettingsTemplate
-	templates, _ := rtComp.ListTemplates(tenantId)
-	isExists := false
-	for _, template := range templates {
-		if template.GetName() == name {
-			isExists = true
-		}
+	return nil
+}
+
+func (cp *ControlPlane) CreateDefaultAppconfigTemplate(tenantId string, name string, dataServiceName string) error {
+	var data string
+	log.Infof("Creating Default %s App config Template ", dataServiceName)
+	switch dataServiceName {
+	case "Cassandra":
+		data = `{
+			"config_items": [
+			  {
+				"key": "CASSANDRA_AUTHORIZER",
+				"value": "AllowAllAuthorizer",
+				"deploy_time": false
+			  },
+			  {
+				"key": "CASSANDRA_AUTHENTICATOR",
+				"value": "AllowAllAuthenticator",
+				"deploy_time": false
+			  },
+			  {
+				"key": "HEAP_NEWSIZE",
+				"value": "400M",
+				"deploy_time": false
+			  },
+			  {
+				"key": "MAX_HEAP_SIZE",
+				"value": "1G",
+				"deploy_time": false
+			  },
+			  {
+				"key": "CASSANDRA_RACK",
+				"value": "rack1",
+				"deploy_time": false
+			  },
+			  {
+				"key": "CASSANDRA_DC",
+				"value": "dc1",
+				"deploy_time": false
+			  }
+			]
+		  }`
+
+	case "Kafka":
+		data = `{
+			"config_items": [
+			  {
+				"key": "heapSize",
+				"value": "400M",
+				"deploy_time": false
+			  }
+			]
+		  }`
+	case "ZooKeeper":
+		data = `{
+			"config_items": [
+			  {
+				"key": "ZOO_4LW_COMMANDS_WHITELIST",
+				"value": "*",
+				"deploy_time": false
+			  }
+			]
+		  }`
+	case "PostgreSQL":
+		data = `{
+			"config_items": [
+			  {
+				"key": "PG_DATABASE",
+				"value": "pds",
+				"deploy_time": false
+			  }
+			]
+		  }`
+	case "RabbitMQ":
+		data = `{
+			"config_items": [
+			  {
+				"key": "RABBITMQ_FORCE_BOOT",
+				"value": "yes",
+				"deploy_time": false
+			  }
+			]
+		  }`
+	default:
+		log.Panicf("Data Service Name is required to Create App Config Templates")
 	}
-	if !isExists {
-		_, err := rtComp.CreateTemplate(tenantId, "2", "1", dataServiceId, "4G", "2G", name, "10G")
-		if err != nil {
-			log.Errorf("Storage template creation failed with error - %v", err)
-			return err
-		}
+
+	temp := template.CreateTemplates(cp.controlPlaneUrl, cp.components)
+	appTemplate, err := temp.CreateAppconfigTemplates(tenantId, dataServiceName, name, data)
+	if err != nil {
+		log.Errorf("Storage template creation failed with error - %v", err)
+		return err
 	}
+	log.Infof("App Config Template ID %s", appTemplate.GetId())
 	return nil
 
 }
