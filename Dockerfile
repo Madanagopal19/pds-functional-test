@@ -9,14 +9,4 @@ RUN curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -
     && curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 \
     && chmod +x get_helm.sh && ./get_helm.sh
 
-
-RUN mkdir /root/.ssh/
-COPY .git .git
-COPY .ssh /root/.ssh
-RUN git config --global url."git@github.com:".insteadOf "https://github.com/"
-
-RUN go mod download
-RUN go mod tidy
-RUN go mod vendor
-
 CMD go test ./test -timeout 99999999s -v
