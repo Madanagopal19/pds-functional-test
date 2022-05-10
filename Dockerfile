@@ -1,21 +1,22 @@
 # Build the proxy binary.
-FROM golang:1.16.6 as builder
-FROM bitnami/kubectl:1.23.4 as kubectl 
+FROM golang:1.18.1 as builder
 
-WORKDIR /workspace
+COPY ./ /usr/src/app/
+WORKDIR /usr/src/app
+RUN curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" \
+    && chmod +x ./kubectl \
+    && mv ./kubectl /usr/local/bin/kubectl \
+    && curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 \
+    && chmod +x get_helm.sh && ./get_helm.sh
 
-# Dependencies.
-COPY go.mod go.mod
-COPY go.sum go.sum
-COPY vendor/ vendor/
-COPY Makefile Makefile
 
-# Source.
-COPY test/ test/
-COPY pkg/ pkg/
+RUN mkdir /root/.ssh/
+COPY .git .git
+COPY .ssh /root/.ssh
+RUN git config --global url."git@github.com:".insteadOf "https://github.com/"
 
-# Installing helm and kubectl 
-COPY --from=kubectl /opt/bitnami/kubectl/bin/kubectl /usr/local/bin/
-ENTRYPOINT curl https://raw.githubusercontent.com/helm/helm/master/scripts/get > get_helm.sh;chmod 700 get_helm.sh; ./get_helm.sh ; sleep 10
+RUN go mod download
+RUN go mod tidy
+RUN go mod vendor
 
 CMD go test ./test -timeout 99999999s -v

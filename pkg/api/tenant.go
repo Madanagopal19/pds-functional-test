@@ -37,3 +37,16 @@ func (tenant *Tenant) GetTenant(tenantId string) (*pds.ModelsTenant, error) {
 	}
 	return tenantModel, nil
 }
+
+func (tenant *Tenant) GetDns(tenantId string) (*pds.ModelsDNSDetails, error) {
+	tenantClient := tenant.apiClient.TenantsApi
+	log.Info("Get tenant.")
+	tenantDnsModel, res, err := tenantClient.ApiTenantsIdDnsDetailsGet(tenant.context, tenantId).Execute()
+
+	if err != nil && res.StatusCode != status.StatusOK {
+		log.Errorf("Error when calling `ApiTenantsIdGet``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
+		return nil, err
+	}
+	return tenantDnsModel, nil
+}

@@ -11,6 +11,14 @@ type ControlPlane struct {
 	components      *api.Components
 }
 
+// NewTargetCluster lsajajsklj
+func NewControlPlane(url string, components *api.Components) *ControlPlane {
+	return &ControlPlane{
+		controlPlaneUrl: url,
+		components:      components,
+	}
+}
+
 func (cp *ControlPlane) GetRegistrationToken(tenantId string) string {
 	log.Info("Fetch the registration token.")
 
@@ -75,10 +83,16 @@ func (cp *ControlPlane) CreateResourceSettingTemplate(tenantId string, name stri
 
 }
 
-// NewTargetCluster lsajajsklj
-func NewControlPlane(url string, components *api.Components) *ControlPlane {
-	return &ControlPlane{
-		controlPlaneUrl: url,
-		components:      components,
+func (cp *ControlPlane) GetDnsZone(tenantId string) string {
+	tenantComp := cp.components.Tenant
+	tenant, err := tenantComp.GetTenant(tenantId)
+	if err != nil {
+		log.Panicf("Unable to fetch the tenant info.\n Error - %v", err)
 	}
+	log.Infof("Get DNS Zone for the tenant. Name -  %s, Id - %s", tenant.GetName(), tenant.GetId())
+	dnsModel, err := tenantComp.GetDns(tenantId)
+	if err != nil {
+		log.Panicf("Unable to fetch the DNSZone info. \n Error - %v", err)
+	}
+	return dnsModel.GetDnsZone()
 }
