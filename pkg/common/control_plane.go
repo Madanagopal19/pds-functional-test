@@ -90,13 +90,11 @@ func (cp *ControlPlane) CreateResourceSettingTemplate(tenantId string, cpuLimit 
 }
 
 //CreateAppconfigTemplates unmarshal the json data to the struct and creates app config templates
-func (cp *ControlPlane) CreateAppconfigTemplates(tenantId string, dataServiceName string, templateName string, data string) (*pds.ModelsApplicationConfigurationTemplate, error) {
+func (cp *ControlPlane) CreateAppconfigTemplates(tenantId string, dataServiceId string, templateName string, data string) (*pds.ModelsApplicationConfigurationTemplate, error) {
 	ap := cp.components.AppConfigTemplate
-	dataServiceID := cp.GetDataserviceId(dataServiceName)
-	log.Infof("DataserviceID %s of %s ", dataServiceID, dataServiceName)
 	templates, _ := ap.ListTemplates(tenantId)
 	for _, template := range templates {
-		if (template.GetName() == templateName) && (template.GetDataServiceId() == dataServiceID) {
+		if (template.GetName() == templateName) && (template.GetDataServiceId() == dataServiceId) {
 			templateId := template.GetId()
 			log.Infof("Template Name %s,  Template ID %s", templateName, templateId)
 			return ap.GetTemplate(templateId)
@@ -120,7 +118,7 @@ func (cp *ControlPlane) CreateAppconfigTemplates(tenantId string, dataServiceNam
 		pdsData = append(pdsData, testDefaultData)
 	}
 
-	apTemplate, err := ap.CreateTemplate(tenantId, dataServiceID, templateName, pdsData)
+	apTemplate, err := ap.CreateTemplate(tenantId, dataServiceId, templateName, pdsData)
 	if err != nil {
 		log.Errorf("App config template creation failed with error - %v", err)
 	}
@@ -220,8 +218,10 @@ func (cp *ControlPlane) CreateDefaultAppconfigTemplate(tenantId string, template
 	appConfigData := map[string]string{"PostgreSQL": psqlConfData, "ZooKeeper": zkConfData, "Kafka": kafkaConfData, "RabbitMQ": rmqConfData, "Cassandra": cassConfdata}
 
 	for dataService, appConfData := range appConfigData {
-		log.Infof("Creating Default Template for Dataservice %s", dataService)
-		appTemplate, err = cp.CreateAppconfigTemplates(tenantId, dataService, templateName, appConfData)
+		log.Infof("Creating Default App Config Template for Dataservice %s", dataService)
+		dataServiceID := cp.GetDataserviceId(dataService)
+		log.Infof("Data Service ID of %s is %s", dataService, dataServiceID)
+		appTemplate, err = cp.CreateAppconfigTemplates(tenantId, dataServiceID, templateName, appConfData)
 		if err != nil {
 			log.Errorf("App Config template creation failed with error - %v", err)
 			return err
