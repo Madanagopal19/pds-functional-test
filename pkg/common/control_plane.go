@@ -13,15 +13,14 @@ type ControlPlane struct {
 	components      *api.Components
 }
 
-
 type ConfigData struct {
 	ConfigItems []struct {
 		Key        string `json:"key"`
 		Value      string `json:"value"`
 		DeployTime bool   `json:"deploy_time"`
 	} `json:"config_items"`
+}
 
-  
 // NewTargetCluster lsajajsklj
 func NewControlPlane(url string, components *api.Components) *ControlPlane {
 	return &ControlPlane{
