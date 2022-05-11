@@ -12,7 +12,7 @@ type TargetCluster struct {
 	kubeconfig string
 }
 
-func (targetCluster *TargetCluster) RegisterToControlPlane(controlPlaneUrl string, helmChartversion string, bearerToken string, tenantId string) error {
+func (targetCluster *TargetCluster) RegisterToControlPlane(controlPlaneUrl string, helmChartversion string, bearerToken string, tenantId string, clusterType string) error {
 	log.Info("Test control plane url connectivity.")
 	_, err := isReachbale(controlPlaneUrl)
 	if err != nil {
@@ -30,8 +30,14 @@ func (targetCluster *TargetCluster) RegisterToControlPlane(controlPlaneUrl strin
 			log.Warn("Target cluster is already registered to control plane.")
 			if !targetCluster.isLatestHelm() {
 				log.Infof("Upgrading PDS helm chart to %v", helmChartversion)
-				cmd = fmt.Sprintf("helm upgrade --create-namespace --namespace=%s pds pds-target --repo=https://portworx.github.io/pds-charts --version=%v --set tenantId=%s "+
-					"--set bearerToken=%s --set apiEndpoint=%s --kubeconfig %s", pdsSystemNamespace, helmChartversion, tenantId, bearerToken, apiEndpoint, targetCluster.kubeconfig)
+				if strings.EqualFold(clusterType, "ocp") {
+					cmd = fmt.Sprintf("helm upgrade --create-namespace --namespace=%s pds pds-target --repo=https://portworx.github.io/pds-charts --version=%v --set platform=ocp --set tenantId=%s "+
+						"--set bearerToken=%s --set apiEndpoint=%s --kubeconfig %s", pdsSystemNamespace, helmChartversion, tenantId, bearerToken, apiEndpoint, targetCluster.kubeconfig)
+				} else {
+					cmd = fmt.Sprintf("helm upgrade --create-namespace --namespace=%s pds pds-target --repo=https://portworx.github.io/pds-charts --version=%v --set tenantId=%s "+
+						"--set bearerToken=%s --set apiEndpoint=%s --kubeconfig %s", pdsSystemNamespace, helmChartversion, tenantId, bearerToken, apiEndpoint, targetCluster.kubeconfig)
+				}
+
 			}
 			isRegistered = true
 		} else {
@@ -41,12 +47,20 @@ func (targetCluster *TargetCluster) RegisterToControlPlane(controlPlaneUrl strin
 
 	if !isRegistered {
 		log.Infof("Installing PDS ( helm version -  %v)", helmChartversion)
-		cmd = fmt.Sprintf("helm install --create-namespace --namespace=%s pds pds-target --repo=https://portworx.github.io/pds-charts --version=%s --set tenantId=%s "+
-			"--set bearerToken=%s --set apiEndpoint=%s --kubeconfig %s", pdsSystemNamespace, helmChartversion, tenantId, bearerToken, apiEndpoint, targetCluster.kubeconfig)
+		if strings.EqualFold(clusterType, "ocp") {
+			cmd = fmt.Sprintf("helm install --create-namespace --namespace=%s pds pds-target --repo=https://portworx.github.io/pds-charts --version=%s --set platform=ocp --set tenantId=%s "+
+				"--set bearerToken=%s --set apiEndpoint=%s --kubeconfig %s", pdsSystemNamespace, helmChartversion, tenantId, bearerToken, apiEndpoint, targetCluster.kubeconfig)
+		} else {
+			cmd = fmt.Sprintf("helm install --create-namespace --namespace=%s pds pds-target --repo=https://portworx.github.io/pds-charts --version=%s --set tenantId=%s "+
+				"--set bearerToken=%s --set apiEndpoint=%s --kubeconfig %s", pdsSystemNamespace, helmChartversion, tenantId, bearerToken, apiEndpoint, targetCluster.kubeconfig)
+		}
+
 	}
+	log.Warn(cmd)
+	time.Sleep(10 * time.Second)
 	output, _, err := ExecShell(cmd)
 	if err != nil {
-		log.Warn("Kindly remove the PDS chart properly and retry if that helps(or slack us for more). CMD>> helm uninstall  pds --namespace pds-system --kubeconfig $KUBECONFIG")
+		log.Warn("Kindly remove the PDS chart properly and retry if that helps(or slack us for more details). CMD>> helm uninstall  pds --namespace pds-system --kubeconfig $KUBECONFIG")
 		log.Panic(err)
 		return err
 	}
