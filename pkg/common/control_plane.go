@@ -226,7 +226,10 @@ func (cp *ControlPlane) CreateDefaultAppconfigTemplate(tenantId string, template
 			log.Errorf("App Config template creation failed with error - %v", err)
 			return err
 		}
-		log.Infof("App Config Template ID %s", appTemplate.GetId())
+		log.Infof("App Config Template ID %s, App Configuration template data:", appTemplate.GetId())
+		for _, configValue := range appTemplate.ConfigItems {
+			log.Infof("%s : %s", *configValue.Key, *configValue.Value)
+		}
 	}
 	return nil
 }
