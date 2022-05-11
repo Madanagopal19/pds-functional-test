@@ -13,12 +13,21 @@ type ControlPlane struct {
 	components      *api.Components
 }
 
+
 type ConfigData struct {
 	ConfigItems []struct {
 		Key        string `json:"key"`
 		Value      string `json:"value"`
 		DeployTime bool   `json:"deploy_time"`
 	} `json:"config_items"`
+
+  
+// NewTargetCluster lsajajsklj
+func NewControlPlane(url string, components *api.Components) *ControlPlane {
+	return &ControlPlane{
+		controlPlaneUrl: url,
+		components:      components,
+	}
 }
 
 func (cp *ControlPlane) GetRegistrationToken(tenantId string) string {
@@ -231,10 +240,16 @@ func (cp *ControlPlane) CreateDefaultAppconfigTemplate(tenantId string, template
 	return nil
 }
 
-// NewTargetCluster lsajajsklj
-func NewControlPlane(url string, components *api.Components) *ControlPlane {
-	return &ControlPlane{
-		controlPlaneUrl: url,
-		components:      components,
+func (cp *ControlPlane) GetDnsZone(tenantId string) string {
+	tenantComp := cp.components.Tenant
+	tenant, err := tenantComp.GetTenant(tenantId)
+	if err != nil {
+		log.Panicf("Unable to fetch the tenant info.\n Error - %v", err)
 	}
+	log.Infof("Get DNS Zone for the tenant. Name -  %s, Id - %s", tenant.GetName(), tenant.GetId())
+	dnsModel, err := tenantComp.GetDns(tenantId)
+	if err != nil {
+		log.Panicf("Unable to fetch the DNSZone info. \n Error - %v", err)
+	}
+	return dnsModel.GetDnsZone()
 }

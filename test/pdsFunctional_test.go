@@ -15,11 +15,38 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var (
-	accountId, tenantId, projectId string
+const (
+	duration  = 900
+	sleepTime = 10
 
-	log                      = logger.Log
-	accountName              = "Portworx"
+	defaultNumPods = 3
+	// FIX-ME
+	// Create the template manually for all the data serices with below name (i.e QaDefault)
+	storageTemplateName   = "QaDefault"
+	resourceTemplateName  = "QaDefault"
+	appConfigTemplateName = "QaDefault"
+	deploymentName        = "automation"
+	templateName          = "QaDefault"
+)
+
+var (
+	dataServiceDefaultResourceTemplateIdMap = make(map[string]string)
+	dataServiceNameIdMap                    = make(map[string]string)
+	dataServiceNameVersionMap               = make(map[string][]string)
+	dataServiceIdImagesMap                  = make(map[string]string)
+	dataServiceNameDefaultAppConfigMap      = make(map[string]string)
+	deployementIdNameMap                    = make(map[string]string)
+	namespaceNameIdMap                      = make(map[string]string)
+	deployementIdnameWithSchBkpMap          = make(map[string]string)
+	deployementIdnameWithAdhocBkpMap        = make(map[string]string)
+)
+
+var (
+	accountId, tenantId, projectId, dnsZone string
+
+	log = logger.Log
+	// accountName              = "Portworx"
+	accountName              = "QA"
 	S3BackupTarget           = "pds-qa-s3-target"
 	S3CompatibleBackupTarget = "pds-qa-s3-compatible-target"
 	BLOBBackuptarget         = "pds-qa-blob-target"
@@ -42,34 +69,6 @@ type PDSTestSuite struct {
 	components      *api.Components
 	env             Environment
 }
-
-const (
-	duration  = 900
-	sleepTime = 10
-
-	defaultNumPods = 3
-	dnsZone        = "portworx.pds-dns.io"
-
-	// FIX-ME
-	// Create the template manually for all the data serices with below name (i.e QaDefault)
-	storageTemplateName   = "QaDefault"
-	resourceTemplateName  = "QaDefault"
-	appConfigTemplateName = "QaDefault"
-	deploymentName        = "automation"
-	templateName          = "QaDefault"
-)
-
-var (
-	dataServiceDefaultResourceTemplateIdMap = make(map[string]string)
-	dataServiceNameIdMap                    = make(map[string]string)
-	dataServiceNameVersionMap               = make(map[string][]string)
-	dataServiceIdImagesMap                  = make(map[string]string)
-	dataServiceNameDefaultAppConfigMap      = make(map[string]string)
-	deployementIdNameMap                    = make(map[string]string)
-	namespaceNameIdMap                      = make(map[string]string)
-	deployementIdnameWithSchBkpMap          = make(map[string]string)
-	deployementIdnameWithAdhocBkpMap        = make(map[string]string)
-)
 
 func (suite *PDSTestSuite) SetupSuite() {
 
@@ -114,9 +113,10 @@ func (suite *PDSTestSuite) SetupSuite() {
 
 	acc := suite.components.Account
 	accounts, _ := acc.GetAccountsList()
-	if strings.EqualFold(suite.env.CLUSTER_TYPE, "onprem") {
+	if strings.EqualFold(suite.env.CLUSTER_TYPE, "onprem") || strings.EqualFold(suite.env.CLUSTER_TYPE, "ocp") {
 		serviceType = "ClusterIP"
 	}
+	log.Infof("Deployment service type %s", serviceType)
 
 	for i := 0; i < len(accounts); i++ {
 		log.Infof("Account Name: %v", accounts[i].GetName())
@@ -130,6 +130,10 @@ func (suite *PDSTestSuite) SetupSuite() {
 	tenantId = tenants[0].GetId()
 	tenantName := tenants[0].GetName()
 	log.Infof("Tenant Details- Name: %s, UUID: %s ", tenantName, tenantId)
+	dnsZone = suite.ControlPlane.GetDnsZone(tenantId)
+	log.Infof("DNSZone info - Name: %s, tenant: %s , account: %s", dnsZone, tenantName, accountName)
+	dnsZone = "qa-staging.pds-dns.io"
+	log.Infof("DNSZone info - Name: %s, tenant: %s , account: %s", dnsZone, tenantName, accountName)
 	projcts := suite.components.Project
 	projects, _ := projcts.GetprojectsList(tenantId)
 	projectId = projects[0].GetId()
@@ -146,7 +150,7 @@ func (suite *PDSTestSuite) SetupSuite() {
 	}
 
 	log.Infof("Register cluster %s to control plane %v ", clusterId, suite.env.CONTROL_PLANE_URL)
-	err = suite.TargetCluster.RegisterToControlPlane(suite.env.CONTROL_PLANE_URL, version, suite.ControlPlane.GetRegistrationToken(tenantId), tenantId)
+	err = suite.TargetCluster.RegisterToControlPlane(suite.env.CONTROL_PLANE_URL, version, suite.ControlPlane.GetRegistrationToken(tenantId), tenantId, suite.env.CLUSTER_TYPE)
 	if err != nil {
 		log.Panicf("Unable to register the target cluster to control plane %v", suite.env.CONTROL_PLANE_URL)
 	}
