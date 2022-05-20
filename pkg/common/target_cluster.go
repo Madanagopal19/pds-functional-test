@@ -101,7 +101,7 @@ func (targetCluster *TargetCluster) CreatePDSNamespace(name string) error {
 		}
 		log.Infof("Terminal output ----> %v", output)
 	}
-
+	time.Sleep(2 * time.Minute)
 	log.Infof("Add PDS label.")
 	cmd := fmt.Sprintf("kubectl label namespaces %v pds.portworx.com/available=true --overwrite=true --kubeconfig %s", name, targetCluster.kubeconfig)
 	output, _, err := ExecShell(cmd)

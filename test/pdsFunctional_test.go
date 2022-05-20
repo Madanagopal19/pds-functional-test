@@ -160,6 +160,7 @@ func (suite *PDSTestSuite) SetupSuite() {
 		log.Infof("Namespace name - %s", ns)
 		suite.TargetCluster.CreatePDSNamespace(ns)
 	}
+	time.Sleep(time.Minute * 60)
 
 }
 
