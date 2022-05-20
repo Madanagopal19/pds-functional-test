@@ -9,4 +9,5 @@ RUN curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -
     && curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 \
     && chmod +x get_helm.sh && ./get_helm.sh
 
+
 CMD go test ./test -timeout 99999999s -v
