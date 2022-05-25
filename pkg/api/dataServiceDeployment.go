@@ -119,3 +119,14 @@ func (ds *DataServiceDeployment) DeleteDeployment(deploymentId string) (*status.
 	}
 	return res, err
 }
+
+func (ds *DataServiceDeployment) GetDeploymentCredentials(deploymentId string) (*pds.DeploymentsCredentials, error) {
+	dsClient := ds.apiClient.DeploymentsApi
+	dsCred, res, err := dsClient.ApiDeploymentsIdCredentialsGet(ds.context, deploymentId).Execute()
+	if res.StatusCode != status.StatusOK {
+		log.Errorf("Error when calling `ApiDeploymentsIdCredentialsGet``: %v\n", err)
+		log.Errorf("Full HTTP response: %v\n", res)
+	}
+	return dsCred, err
+
+}

@@ -3,12 +3,16 @@ package common
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -170,6 +174,49 @@ func DeleteAllPVC(namespace string, pathToKubeconfig string) error {
 	}
 	log.Info(output)
 	return err
+}
+
+func CreateKubernetesClientFromConfig(kubeConfigPath string) (clientset.Interface, error) {
+	cfg, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := clientset.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+
+func Getk8sClient() clientset.Interface {
+	var err error
+	var k8sClient clientset.Interface
+	if k8sClient == nil {
+		if k8senv := os.Getenv("TARGET_KUBECONFIG"); k8senv != "" {
+			k8sClient, err = CreateKubernetesClientFromConfig(k8senv)
+			if err != nil {
+				log.Panicf("Unable to get the client")
+			}
+		}
+	}
+	return k8sClient
+}
+
+func WaitForDeployment(ctx context.Context, client clientset.Interface, deployment *appsv1.Deployment, namespace string, replicas int32) error {
+	var err error
+	waitErr := wait.PollImmediate(poll, pollTimeout, func() (bool, error) {
+		log.Info("waiting for the deployment to complete")
+		deployment, err = client.AppsV1().Deployments(namespace).Get(ctx, deployment.Name, metav1.GetOptions{})
+		if err != nil {
+			return false, nil
+		}
+		if deployment.Status.ReadyReplicas == replicas {
+			return true, nil
+		}
+		return true, nil
+	})
+	return waitErr
 }
 
 func DeleteAllReleasedPV(pathToKubeconfig string) error {

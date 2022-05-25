@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
 
 	logger "github.com/portworx/pds-functional-test/pkg/logger"
 )
@@ -22,6 +23,8 @@ const (
 	releaseName          = "myrelease"
 	pdsSystemNamespace   = "pds-system"
 	envClusterType       = "CLUSTER_TYPE"
+	pollTimeout          = 3 * time.Minute
+	poll                 = 30 * time.Second
 )
 
 // Environment lhasha
