@@ -203,6 +203,22 @@ func Getk8sClient() clientset.Interface {
 	return k8sClient
 }
 
+func waitForPod(ctx context.Context, client clientset.Interface, pod *v1.Pod, namespace string, replicas int32) error {
+	var err error
+	waitErr := wait.PollImmediate(poll, pollTimeout, func() (bool, error) {
+		log.Info("waiting for the pod to complete")
+		pod, err = client.CoreV1().Pods(namespace).Get(ctx, pod.Name, metav1.GetOptions{})
+		if err != nil {
+			return false, nil
+		}
+		if pod.Status.Phase == "Running" {
+			return true, nil
+		}
+		return true, nil
+	})
+	return waitErr
+}
+
 func WaitForDeployment(ctx context.Context, client clientset.Interface, deployment *appsv1.Deployment, namespace string, replicas int32) error {
 	var err error
 	waitErr := wait.PollImmediate(poll, pollTimeout, func() (bool, error) {
